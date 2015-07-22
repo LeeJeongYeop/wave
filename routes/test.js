@@ -1,15 +1,16 @@
 var express = require('express');
 var router = express.Router();
+var logger = require('../logger');
 
 /* GET home page. */
 router.post('/', function(req, res, next) {
-  console.log("TEST OK");
+  logger.info("TEST OK");
   res.json({
     status : true,
     message : "success",
     data :
     {
-      name : "muf",
+      name : "wave",
       test : "ok"
     }
   });

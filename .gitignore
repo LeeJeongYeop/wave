@@ -1,1 +1,3 @@
 node_modules/
+models/db_config.json
+models/db_cryto.js

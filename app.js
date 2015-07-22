@@ -3,11 +3,13 @@ var path = require('path');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var log = require('./logger');
 
 /***********
  * My routes
  ***********/
 var test = require('./routes/test');
+var user = require('./routes/userCtrl');
 
 var app = express();
 
@@ -20,12 +22,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 /***************
  * My routes Use
  ***************/
-app.use('/muf/test', test);
+app.use('/wave/test', test);
+app.use('/wave/user', user);
 
 var http = require('http');
 app.set('port', 30004); //30004번 포트로 지정
 var server = http.createServer(app);
 server.listen(app.get('port'));
-console.log('[MusicFriends] Application Listening on Port 30004 (80 with Nginx Proxy)');
+log.info('[MusicFriends] Application Listening on Port 30004 (80 with Nginx Proxy)');
 
 module.exports = app;
