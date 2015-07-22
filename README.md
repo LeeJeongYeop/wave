@@ -1,4 +1,4 @@
-# muf (Music Friends)
+# wave
 > Nexters 1:1 music recommend app
 
 &nbsp;
@@ -15,5 +15,5 @@
 
 | Feature |	Method	| Request URL | Todo Status | Date (yymmdd) |
 | :------------ |	:-------:	| :-----------------| :--------: | :----: |
-| TEST |	POST	| /muf/test | complete | 15-07-18  |
-| 회원가입 |	POST	| /muf/join | incomplete |   |
+| TEST |	POST	| /wave/test | complete | 15-07-18  |
+| 회원가입 |	POST	| /wave/join | incomplete |   |
