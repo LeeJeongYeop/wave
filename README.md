@@ -1,4 +1,4 @@
-# muf (Music Friends)
+# wave
 > Nexters 1:1 music recommend app
 
 &nbsp;
