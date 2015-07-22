@@ -16,4 +16,4 @@
 | Feature |	Method	| Request URL | Todo Status | Date (yymmdd) |
 | :------------ |	:-------:	| :-----------------| :--------: | :----: |
 | TEST |	POST	| /wave/test | complete | 15-07-18  |
-| 회원가입 |	POST	| /wave/join | incomplete |   |
+| 이메일회원가입 |	POST	| /wave/join | complete | 15-07-23  |
