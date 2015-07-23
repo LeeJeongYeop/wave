@@ -6,6 +6,8 @@ var router = express.Router();
 var logger = require('../logger');
 var userModel = require('../models/userModel');
 var _crypto = require('../models/db_crypto');
+var fs = require('fs');
+var my = require('./my_conf');
 
 /*************
  * parameter check
@@ -22,7 +24,7 @@ var data_check = function(data){
 /*************
  * Profil Image
  *************/
-router.get('/:IMG_NAME', function (req, res) {
+router.get('/img/:IMG_NAME', function (req, res) {
     var imgName = req.params.IMG_NAME;
     var img = fs.readFileSync('./public/img/' + imgName);
     res.writeHead(200, {'Content-Type': 'image/JPG'});
@@ -35,13 +37,12 @@ router.get('/:IMG_NAME', function (req, res) {
 router.post('/join', function(req, res){
     logger.info('POST DATA: ', req.body);
     var n = parseInt((Math.random()*4)+1);  // 랜덤 이미지
-    var img_path = "http://52.68.54.75/wave/img/"+n+".JPG";
     var check = [req.body.email, req.body.password, req.body.nickname];
     var data = {
         "user_email" : req.body.email,
         "user_password" : _crypto.do_ciper(req.body.password),
         "user_nickname" : req.body.nickname,
-        "user_img" : img_path,
+        "user_img" : my.IMG(n),
         "user_joinpath" : 0
     };
     if(data_check(check) == 1){

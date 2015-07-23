@@ -1,5 +1,6 @@
+.idea/
 node_modules/
 models/db_config.json
-models/db_cryto.js
 models/db_crypto.js
-.idea/
+routes/my_conf.js
+public/img
