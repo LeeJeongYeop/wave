@@ -8,8 +8,6 @@ var async = require('async');
 var db_config = require('./db_config');
 var logger = require('../logger');
 var pool = mysql.createPool(db_config);
-var crypto = require('crypto');
-var _crypto = require('./db_crypto');
 
 /*************
  * Email Join
@@ -20,7 +18,7 @@ exports.join = function(data, done) {
                 var sql = "select count(*) cnt from wave_user where user_email=? and user_joinpath=?";
                 pool.query(sql, [data.user_email, data.user_joinpath], function(err, rows){
                     if(err){
-                        logger.error("join_waterfall_1");
+                        logger.error("Join_Waterfall_1");
                         callback(err);
                     }else{
                         if(rows[0].cnt == 1) done(false, "email same"); // done 콜백
@@ -32,22 +30,39 @@ exports.join = function(data, done) {
                 var sql = "INSERT INTO wave_user SET ?";
                 pool.query(sql, data, function(err, rows){
                     if(err){
-                        logger.error("join_waterfall_2");
+                        logger.error("Join_Waterfall_2");
                         callback(err);
                     }else{
                         if(rows.affectedRows == 1){
                             callback(null);
                         }else{
-                            logger.error("affectedRows error");
-                            done(false, "DB error");  // error
+                            logger.error("Join_affectedRows error");
+                            done(false, "Join_DB error");  // error
                         }
                     }
                 });
             }
         ],
         function(err){
-            if(err) done(false, "DB error");  // error
-            else done(true);  // success
+            if(err) done(false, "Join_DB error");  // error
+            else done(true, "success");  // success
         }
-    )   // waterfall
+    );  // waterfall
+};
+
+/*************
+ * Email Login
+ *************/
+exports.login = function(data, done){
+    var sql = "SELECT user_id FROM wave_user WHERE user_email=? and user_password=? and user_joinpath=?";
+    pool.query(sql, data, function(err, rows){
+        if(err){
+            logger.error("Login_DB error");
+            done(false, "Login_DB error");
+        }else{
+            logger.info('rows[0]:', rows[0]);
+            if(rows[0]) done(true, "success", rows[0]);  // success
+            else done(false, "아이디와 비밀번호가 일치하지 않습니다.")
+        };
+    })
 };

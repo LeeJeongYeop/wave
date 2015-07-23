@@ -7,7 +7,7 @@
   
 - Language : Javascript
 - Framework : [Node.js](https://nodejs.org/), [Express](http://expressjs.com/)
-- Test Server : [AWS EC2](http://aws.amazon.com/ko/ec2/), [nginX](http://nginx.org/) 
+- Test Server : [AWS EC2](http://aws.amazon.com/ko/ec2/), [Nginx](http://nginx.org/) 
 - Database : MariaDB(MySQL OpenSource)
 
 ## REST API 
@@ -17,3 +17,4 @@
 | :------------ |	:-------:	| :-----------------| :--------: | :----: |
 | TEST |	POST	| /wave/test | complete | 15-07-18  |
 | Email Join |	POST	| /wave/join | complete | 15-07-23  |
+| Email Login |	POST	| /wave/login | complete | 15-07-23  |

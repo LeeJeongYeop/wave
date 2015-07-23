@@ -20,37 +20,65 @@ var data_check = function(data){
 }
 
 /*************
+ * Profil Image
+ *************/
+router.get('/:IMG_NAME', function (req, res) {
+    var imgName = req.params.IMG_NAME;
+    var img = fs.readFileSync('./public/img/' + imgName);
+    res.writeHead(200, {'Content-Type': 'image/JPG'});
+    res.end(img, 'binary');
+});
+
+/*************
  * Email Join
  *************/
 router.post('/join', function(req, res){
     logger.info('POST DATA: ', req.body);
+    var n = parseInt((Math.random()*4)+1);  // 랜덤 이미지
+    var img_path = "http://52.68.54.75/wave/img/"+n+".JPG";
     var check = [req.body.email, req.body.password, req.body.nickname];
     var data = {
         "user_email" : req.body.email,
         "user_password" : _crypto.do_ciper(req.body.password),
         "user_nickname" : req.body.nickname,
+        "user_img" : img_path,
         "user_joinpath" : 0
-    }
-    var null_check = data_check(check);
-    if(null_check == 1){
-        res.json({
+    };
+    if(data_check(check) == 1){
+        return res.json({
             "status" : false,
             "message" : "빈칸을 입력해주세요."
         });
     }else{
-        userModel.join(data, function(check, msg){
-            if(check){
-                res.json({
-                    "status" : true
-                });
-            }else{
-                res.json({
-                    "status" : false,
-                    "message" : msg
-                });
-            }
+        userModel.join(data, function(status, msg){
+            return res.json({
+                "status" : status,
+                "message" : msg
+            });
         });
-    }
+    };
+});
+
+/*************
+ * Email Login
+ *************/
+router.post('/login', function(req, res){
+    var check = [req.body.email, req.body.password];
+    if(data_check(check) == 1){
+        return res.json({
+            "status" : false,
+            "message" : "빈칸을 입력해주세요."
+        });
+    }else{
+        var data = [req.body.email, _crypto.do_ciper(req.body.password), '0']  // [2] = user_joinpath
+        userModel.login(data, function(status, msg, rows){
+            if(status) req.session.user = rows;  // session 저장
+            return res.json({
+                "status" : status,
+                "message" : msg
+            });
+        });
+    };
 });
 
 module.exports = router;
