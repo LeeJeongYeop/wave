@@ -62,7 +62,24 @@ exports.login = function(data, done){
         }else{
             logger.info('rows[0]:', rows[0]);
             if(rows[0]) done(true, "success", rows[0]);  // success
-            else done(false, "아이디와 비밀번호가 일치하지 않습니다.")
+            else done(false, "아이디와 비밀번호가 일치하지 않습니다.");
         };
     })
+};
+
+/*************
+ * Profile View
+ *************/
+exports.profileView = function(data, done){
+    var sql = "SELECT user_email, user_nickname FROM wave_user WHERE user_id = ?";
+    pool.query(sql, data, function(err, rows){
+        if(err){
+            logger.error("Profile View DB error");
+            done(false, "Profile View DB error");
+        }else{
+            logger.info('rows[0]', rows[0]);
+            if(rows[0]) done(true, "success", rows[0])
+            else done(false, "Profile View DB error");
+        }
+    });
 };

@@ -82,4 +82,29 @@ router.post('/login', function(req, res){
     };
 });
 
+/*************
+ * Profile View
+ *************/
+router.get('/profile', function(req, res){
+    if(req.session.user){
+        userModel.profileView(req.session.user, function(status, msg, rows){
+            if(status){
+                res.json({
+                    "status" : status,
+                    "message" : msg,
+                    "data" : {
+                        "email" : rows.user_email,
+                        "nickname" : rows.user_nickname
+                    }
+                });
+            }
+        });
+    }else{
+        return res.json({
+            "status" : false,
+            "message" : "not log-in"
+        });
+    }
+});
+
 module.exports = router;
