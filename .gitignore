@@ -3,4 +3,4 @@ node_modules/
 models/db_config.json
 models/db_crypto.js
 routes/my_conf.js
-public/img
+public/img/
