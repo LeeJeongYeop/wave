@@ -71,7 +71,7 @@ exports.login = function(data, done){
  * Profile View
  *************/
 exports.profileView = function(data, done){
-    var sql = "SELECT user_email, user_nickname FROM wave_user WHERE user_id = ?";
+    var sql = "SELECT user_email, user_nickname, user_img FROM wave_user WHERE user_id = ?";
     pool.query(sql, data, function(err, rows){
         if(err){
             logger.error("Profile View DB error");

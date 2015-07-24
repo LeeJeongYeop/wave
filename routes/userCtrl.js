@@ -94,7 +94,8 @@ router.get('/profile', function(req, res){
                     "message" : msg,
                     "data" : {
                         "email" : rows.user_email,
-                        "nickname" : rows.user_nickname
+                        "nickname" : rows.user_nickname,
+                        "profile_img" : rows.user_img
                     }
                 });
             }
