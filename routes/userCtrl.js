@@ -19,7 +19,7 @@ var data_check = function(data){
             return 1;
         }
     }
-}
+};
 
 /*************
  * Profil Image
@@ -57,7 +57,7 @@ router.post('/join', function(req, res){
                 "message" : msg
             });
         });
-    };
+    }
 });
 
 /*************
@@ -79,14 +79,14 @@ router.post('/login', function(req, res){
                 "message" : msg
             });
         });
-    };
+    }
 });
 
 /*************
  * Profile View
  *************/
 router.get('/profile', function(req, res){
-    if(req.session.user){
+    if(req.session.user){  // loginRequired
         userModel.profileView(req.session.user, function(status, msg, rows){
             if(status){
                 res.json({
@@ -95,11 +95,47 @@ router.get('/profile', function(req, res){
                     "data" : {
                         "email" : rows.user_email,
                         "nickname" : rows.user_nickname,
-                        "profile_img" : rows.user_img
+                        "comment" : rows.user_comment,
+                        "profile_img" : rows.user_img,
+                        "point" : rows.user_point
                     }
+                });
+            }else{
+                res.json({
+                    "status" : status,
+                    "message" : msg
                 });
             }
         });
+    }else{
+        return res.json({
+            "status" : false,
+            "message" : "not log-in"
+        });
+    }
+});
+
+/*************
+ * Profile Edit
+ *************/
+router.post('/profile', function(req, res){
+    if(req.session.user){  // loginRequired
+        logger.info("req.body : ", req.body);
+        if(data_check([req.body.nickname, req.body.song1]) == 1){
+            return res.json({
+                "status" : false,
+                "message" : "닉네임과 첫번째 노래를 선택해주세요."
+            });
+        }else{
+            var data = [req.body.nickname, req.body.comment, req.body.song1, req.body.song2, req.body.song3, req.session.user];
+            logger.info("data: ", data);
+            userModel.profileEdit(data, function(status, msg){
+                return res.json({
+                   "status" : status,
+                    "message" : msg
+                });
+            });
+        }
     }else{
         return res.json({
             "status" : false,

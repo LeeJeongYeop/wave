@@ -63,15 +63,15 @@ exports.login = function(data, done){
             logger.info('rows[0]:', rows[0]);
             if(rows[0]) done(true, "success", rows[0]);  // success
             else done(false, "아이디와 비밀번호가 일치하지 않습니다.");
-        };
-    })
+        }
+    });
 };
 
 /*************
  * Profile View
  *************/
 exports.profileView = function(data, done){
-    var sql = "SELECT user_email, user_nickname, user_img FROM wave_user WHERE user_id = ?";
+    var sql = "SELECT user_email, user_nickname, user_comment, user_img, user_point FROM wave_user WHERE user_id = ?";
     pool.query(sql, data, function(err, rows){
         if(err){
             logger.error("Profile View DB error");
@@ -80,6 +80,22 @@ exports.profileView = function(data, done){
             logger.info('rows[0]', rows[0]);
             if(rows[0]) done(true, "success", rows[0])
             else done(false, "Profile View DB error");
+        }
+    });
+};
+
+/*************
+ * Profile Edit
+ *************/
+exports.profileEdit = function(data, done){
+    var sql = "UPDATE wave_user SET user_nickname = ?, user_comment = ?, user_song_1 = ?, user_song_2 = ?, user_song_3 = ? WHERE user_id = ?";
+    pool.query(sql, data, function(err, rows){
+        if(err){
+            logger.error("Profile Edit DB error");
+            done(false, "Profile Edit DB error");
+        }else{
+            if(rows.affectedRows == 1) done(true, "success");
+             else done(false, "Profile Edit DB error");
         }
     });
 };
