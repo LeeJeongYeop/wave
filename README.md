@@ -20,3 +20,4 @@
 | Email Login |	POST	| /wave/user/login | complete | 15-07-23  |
 | Profile View |	GET	| /wave/user/profile | complete | 15-07-24  |
 | Profile Edit |	POST	| /wave/user/profile | complete | 15-07-25  |
+| Friend Add |	POST	| /wave/friend/add | complete | 15-07-26  |
