@@ -22,3 +22,4 @@
 | Profile Edit |	POST	| /wave/user/profile | complete | 15-07-25  |
 | Friend Add |	POST	| /wave/friend/add | complete | 15-07-26  |
 | Friend List |	GET	| /wave/friend | complete | 15-07-27  |
+| Friend Delete |	POST	| /wave/friend/add | complete | 15-07-27  |
