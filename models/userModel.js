@@ -78,7 +78,7 @@ exports.profileView = function(data, done){
             done(false, "Profile View DB error");
         }else{
             logger.info('rows[0]', rows[0]);
-            if(rows[0]) done(true, "success", rows[0])
+            if(rows[0]) done(true, "success", rows[0]);
             else done(false, "Profile View DB error");
         }
     });
