@@ -10,6 +10,7 @@ var log = require('./logger');
  ***********/
 var test = require('./routes/test');
 var user = require('./routes/userCtrl');
+var friend = require('./routes/friendCtrl');
 
 var session = require('express-session');  // express session
 
@@ -32,6 +33,7 @@ app.use(session({
  ***************/
 app.use('/wave/test', test);
 app.use('/wave/user', user);
+app.use('/wave/friend', friend);
 
 var http = require('http');
 app.set('port', 30004); //30004번 포트로 지정

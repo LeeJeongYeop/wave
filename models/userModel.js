@@ -15,7 +15,7 @@ var pool = mysql.createPool(db_config);
 exports.join = function(data, done) {
     async.waterfall([
             function(callback){   // 중복검사
-                var sql = "select count(*) cnt from wave_user where user_email=? and user_joinpath=?";
+                var sql = "SELECT COUNT(*) cnt FROM wave_user WHERE user_email=? AND user_joinpath=?";
                 pool.query(sql, [data.user_email, data.user_joinpath], function(err, rows){
                     if(err){
                         logger.error("Join_Waterfall_1");
@@ -54,7 +54,7 @@ exports.join = function(data, done) {
  * Email Login
  *************/
 exports.login = function(data, done){
-    var sql = "SELECT user_id FROM wave_user WHERE user_email=? and user_password=? and user_joinpath=?";
+    var sql = "SELECT user_no FROM wave_user WHERE user_email=? and user_password=? and user_joinpath=?";
     pool.query(sql, data, function(err, rows){
         if(err){
             logger.error("Login_DB error");
@@ -71,7 +71,7 @@ exports.login = function(data, done){
  * Profile View
  *************/
 exports.profileView = function(data, done){
-    var sql = "SELECT user_email, user_nickname, user_comment, user_img, user_point FROM wave_user WHERE user_id = ?";
+    var sql = "SELECT user_email, user_nickname, user_comment, user_img, user_point, user_song_1, user_song_2, user_song_3 FROM wave_user WHERE user_no = ?";
     pool.query(sql, data, function(err, rows){
         if(err){
             logger.error("Profile View DB error");
@@ -88,7 +88,7 @@ exports.profileView = function(data, done){
  * Profile Edit
  *************/
 exports.profileEdit = function(data, done){
-    var sql = "UPDATE wave_user SET user_nickname = ?, user_comment = ?, user_song_1 = ?, user_song_2 = ?, user_song_3 = ? WHERE user_id = ?";
+    var sql = "UPDATE wave_user SET user_nickname = ?, user_comment = ?, user_song_1 = ?, user_song_2 = ?, user_song_3 = ? WHERE user_no = ?";
     pool.query(sql, data, function(err, rows){
         if(err){
             logger.error("Profile Edit DB error");

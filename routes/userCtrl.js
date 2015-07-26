@@ -87,7 +87,7 @@ router.post('/login', function(req, res){
  *************/
 router.get('/profile', function(req, res){
     if(req.session.user){  // loginRequired
-        userModel.profileView(req.session.user, function(status, msg, rows){
+        userModel.profileView(req.session.user.user_no, function(status, msg, rows){
             if(status){
                 res.json({
                     "status" : status,
@@ -97,7 +97,10 @@ router.get('/profile', function(req, res){
                         "nickname" : rows.user_nickname,
                         "comment" : rows.user_comment,
                         "profile_img" : rows.user_img,
-                        "point" : rows.user_point
+                        "point" : rows.user_point,
+                        "song1" : rows.user_song_1,
+                        "song2" : rows.user_song_2,
+                        "song3" : rows.user_song_3
                     }
                 });
             }else{
@@ -127,7 +130,7 @@ router.post('/profile', function(req, res){
                 "message" : "닉네임과 첫번째 노래를 선택해주세요."
             });
         }else{
-            var data = [req.body.nickname, req.body.comment, req.body.song1, req.body.song2, req.body.song3, req.session.user];
+            var data = [req.body.nickname, req.body.comment, req.body.song1, req.body.song2, req.body.song3, req.session.user.user_no];
             logger.info("data: ", data);
             userModel.profileEdit(data, function(status, msg){
                 return res.json({
