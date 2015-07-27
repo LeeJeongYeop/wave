@@ -23,3 +23,4 @@
 | Friend Add |	POST	| /wave/friend/add | complete | 15-07-26  |
 | Friend List |	GET	| /wave/friend | complete | 15-07-27  |
 | Friend Delete |	POST	| /wave/friend/add | complete | 15-07-27  |
+| Surfers |	GET	| /wave/play/surfers | complete | 15-07-28  |
