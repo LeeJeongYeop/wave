@@ -13,7 +13,7 @@ exports.surfers = function(data, done){
     var sql =
         "SELECT user_no, user_nickname, user_comment, user_img, user_point, user_song_1, user_song_2, user_song_3 "+
         "FROM wave_user "+
-        "WHERE user_no NOT IN(?) ORDER BY RAND() LIMIT 10 ";
+        "WHERE user_no NOT IN(?) ORDER BY RAND() LIMIT 5 ";
     pool.query(sql, data, function(err, rows){
         if(err){
             logger.error("Surfers DB error");
