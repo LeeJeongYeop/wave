@@ -71,7 +71,7 @@ router.post('/login', function(req, res){
             "message" : "빈칸을 입력해주세요."
         });
     }else{
-        var data = [req.body.email, _crypto.do_ciper(req.body.password), '0']  // [2] = user_joinpath
+        var data = [req.body.email, _crypto.do_ciper(req.body.password), '0'];  // [2] = user_joinpath
         userModel.login(data, function(status, msg, rows){
             if(status) req.session.user = rows;  // session 저장
             return res.json({
@@ -83,13 +83,34 @@ router.post('/login', function(req, res){
 });
 
 /*************
+ * Facebook
+ *************/
+router.post("/fb", function(req, res){
+    logger.info('req.body', req.body);
+    if(req.body.access_token){
+        userModel.fb(req.body.access_token, function(status, msg, rows){
+            if(status) req.session.user = rows;  // session 저장
+            return res.json({
+                "status" : status,
+                "message" : msg
+            })
+        });
+    }else{
+        return res.json({
+            "status" : false,
+            "message" : "No Access Token"
+        });
+    }
+});
+
+/*************
  * Profile View
  *************/
 router.get('/profile', function(req, res){
     if(req.session.user){  // loginRequired
         userModel.profileView(req.session.user.user_no, function(status, msg, rows){
             if(status){
-                res.json({
+                return res.json({
                     "status" : status,
                     "message" : msg,
                     "data" : {
@@ -104,7 +125,7 @@ router.get('/profile', function(req, res){
                     }
                 });
             }else{
-                res.json({
+                return res.json({
                     "status" : status,
                     "message" : msg
                 });
@@ -134,7 +155,7 @@ router.post('/profile', function(req, res){
             logger.info("data: ", data);
             userModel.profileEdit(data, function(status, msg){
                 return res.json({
-                   "status" : status,
+                    "status" : status,
                     "message" : msg
                 });
             });

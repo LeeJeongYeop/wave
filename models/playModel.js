@@ -9,6 +9,9 @@ var db_config = require('./db_config');
 var logger = require('../logger');
 var pool = mysql.createPool(db_config);
 
+/*************
+ * Surfers Random
+ *************/
 exports.surfers = function(data, done){
     var sql =
         "SELECT user_no, user_nickname, user_comment, user_img, user_point, user_song_1, user_song_2, user_song_3 "+

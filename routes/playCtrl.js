@@ -7,7 +7,7 @@ var logger = require('../logger');
 var playModel = require('../models/playModel');
 
 /*************
- * Friend List
+ * Surfers Random
  *************/
 router.get('/surfers', function(req, res){
     if(req.session.user){  // loginRequired
