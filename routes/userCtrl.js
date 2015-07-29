@@ -114,14 +114,14 @@ router.get('/profile', function(req, res){
                     "status" : status,
                     "message" : msg,
                     "data" : {
-                        "email" : rows.user_email,
-                        "nickname" : rows.user_nickname,
-                        "comment" : rows.user_comment,
-                        "profile_img" : rows.user_img,
-                        "point" : rows.user_point,
-                        "song1" : rows.user_song_1,
-                        "song2" : rows.user_song_2,
-                        "song3" : rows.user_song_3
+                        "email" : rows.data.user_email,
+                        "nickname" : rows.data.user_nickname,
+                        "comment" : rows.data.user_comment,
+                        "profile_img" : rows.data.user_img,
+                        "point" : rows.data.user_point,
+                        "song1" : rows.song1,
+                        "song2" : rows.song2,
+                        "song3" : rows.song3
                     }
                 });
             }else{
@@ -145,15 +145,17 @@ router.get('/profile', function(req, res){
 router.post('/profile', function(req, res){
     if(req.session.user){  // loginRequired
         logger.info("req.body : ", req.body);
-        if(data_check([req.body.nickname, req.body.song1]) == 1){
+        if(data_check([req.body.nickname]) == 1){
             return res.json({
                 "status" : false,
-                "message" : "닉네임과 첫번째 노래를 선택해주세요."
+                "message" : "닉네임을 입력해주세요."
             });
         }else{
-            var data = [req.body.nickname, req.body.comment, req.body.song1, req.body.song2, req.body.song3, req.session.user.user_no];
-            logger.info("data: ", data);
-            userModel.profileEdit(data, function(status, msg){
+            var data = [req.body.nickname, req.body.comment, req.session.user.user_no];
+            var song1 = req.body.song1;
+            var song2 = req.body.song2;
+            var song3 = req.body.song3;
+            userModel.profileEdit(data, song1, song2, song3, function(status, msg){
                 return res.json({
                     "status" : status,
                     "message" : msg

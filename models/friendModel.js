@@ -54,11 +54,13 @@ exports.add = function(data, done){
         if(err){
             logger.error("Friend_Add_getConnection error");
             done(false, "Friend_Add DB error");
+            conn.release();
         }else{
             conn.beginTransaction(function(err){
                 if(err){
                     logger.error("Friend_Add_Transaction error");
                     done(false, "Friend_Add DB error");
+                    conn.release();
                 }else{
                     async.waterfall([
                             function(callback){
@@ -146,11 +148,13 @@ exports.delete = function(data, done){
         if(err){
             logger.error("Friend_Delete_getConnection error");
             done(false, "Friend_Delete_DB error");
+            conn.release();
         }else{
             conn.beginTransaction(function(err){
                 if(err){
                     logger.error("Friend_Delete_Transaction error");
                     done(false, "Friend_Delete DB error");
+                    conn.release();
                 }else{
                     async.waterfall([
                             function(callback){

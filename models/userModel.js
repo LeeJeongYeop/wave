@@ -85,6 +85,7 @@ exports.fb = function(access_token, done){
                 if(err){
                     logger.error("Facebook_getConnection error");
                     done(false, "Facebook DB error");
+                    conn.release();
                 }else{
                     async.waterfall([
                             function(callback){  // 가입여부 확인
@@ -159,31 +160,311 @@ exports.fb = function(access_token, done){
  * Profile View
  *************/
 exports.profileView = function(data, done){
-    var sql = "SELECT user_email, user_nickname, user_comment, user_img, user_point, user_song_1, user_song_2, user_song_3 FROM wave_user WHERE user_no = ?";
-    pool.query(sql, data, function(err, rows){
-        if(err){
-            logger.error("Profile View DB error");
-            done(false, "Profile View DB error");
-        }else{
-            logger.info('rows[0]', rows[0]);
-            if(rows[0]) done(true, "success", rows[0]);
-            else done(false, "Profile View DB error");
+    async.parallel({
+            data: function(callback){
+                var sql = "SELECT user_email, user_nickname, user_comment, user_img, user_point FROM wave_user WHERE user_no = ?";
+                pool.query(sql, data, function (err, rows) {
+                    if (err) {
+                        logger.error("Profile View DB error");
+                        callback(err);
+                    } else {
+                        logger.info('rows[0]', rows[0]);
+                        if (rows[0]) callback(null, rows[0]);
+                        else done(false, "Profile View DB error");  // error 없이 콜백
+                    }
+                });
+            },
+            song1: function (callback) {
+                var sql = "SELECT first_thumb_url, first_title, first_video FROM wave_song_first WHERE user_no=?";
+                pool.query(sql, data, function(err, rows){
+                    if (err) {
+                        logger.error("Profile View DB error");
+                        callback(err);
+                    } else {
+                        logger.info('rows[0]', rows[0]);
+                        if (rows[0]) callback(null, rows[0]);
+                        else done(false, "Profile View DB error");  // error 없이 콜백
+                    }
+                });
+            },
+            song2: function (callback) {
+                var sql = "SELECT second_thumb_url, second_title, second_video FROM wave_song_second WHERE user_no=?";
+                pool.query(sql, data, function(err, rows){
+                    if (err) {
+                        logger.error("Profile View DB error");
+                        callback(err);
+                    } else {
+                        logger.info('rows[0]', rows[0]);
+                        if (rows[0]) callback(null, rows[0]);
+                        else callback(null, "NOT");
+                    }
+                });
+            },
+            song3: function (callback) {
+                var sql = "SELECT third_thumb_url, third_title, third_video FROM wave_song_third WHERE user_no=?";
+                pool.query(sql, data, function(err, rows){
+                    if (err) {
+                        logger.error("Profile View DB error");
+                        callback(err);
+                    } else {
+                        logger.info('rows[0]', rows[0]);
+                        if (rows[0]) callback(null, rows[0]);
+                        else callback(null, "NOT");
+                    }
+                });
+            }
+        },
+        function(err, result){
+            if (err) done(false, "Profile View DB error");
+            else{
+                logger.info("result:", result);
+                done(true, "success", result);
+            }
         }
-    });
+    ); // parallel
 };
 
 /*************
  * Profile Edit
  *************/
-exports.profileEdit = function(data, done){
-    var sql = "UPDATE wave_user SET user_nickname = ?, user_comment = ?, user_song_1 = ?, user_song_2 = ?, user_song_3 = ? WHERE user_no = ?";
-    pool.query(sql, data, function(err, rows){
+exports.profileEdit = function(data, song1, song2, song3, done){
+    pool.getConnection(function(err, conn){
         if(err){
-            logger.error("Profile Edit DB error");
-            done(false, "Profile Edit DB error");
+            logger.error("Profile_Edit_getConnection error");
+            done(false, "Profile_Edit DB error");
+            conn.release();
         }else{
-            if(rows.affectedRows == 1) done(true, "success");
-            else done(false, "Profile Edit DB error");
+            conn.beginTransaction(function(err) {
+                if(err){
+                    logger.error("Profile_Edit_beginTransaction error");
+                    done(false, "Profile_Edit DB error");
+                    conn.release();
+                }else{
+                    async.waterfall([
+                            function(callback){
+                                var sql = "UPDATE wave_user SET user_nickname = ?, user_comment = ? WHERE user_no = ?";
+                                conn.query(sql, data, function(err, rows){
+                                    if(err){
+                                        logger.error("Profile_Edit_Waterfall_1 error");
+                                        callback(err);
+                                    }else{
+                                        if(rows.affectedRows == 1) callback(null);
+                                        else{
+                                            logger.error("Profile_Edit_affectedRows_1 error");
+                                            conn.rollback(function(){
+                                                done(false, "Profile_Edit DB error");  // error
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function(callback){   // First Song
+                                var sql = "SELECT COUNT(*) cnt FROM wave_song_first WHERE user_no = ?";
+                                conn.query(sql, data[2], function(err, rows){   // song1 데이터 유무 검사
+                                    if(err){
+                                        logger.error("Profile_Edit_Waterfall_2 error");
+                                        callback(err);
+                                    }else{
+                                        if(rows[0].cnt == 1){
+                                            var sql = "UPDATE wave_song_first SET first_thumb_url=?, first_title=?, first_video=? WHERE user_no = ?";
+                                            song1.push(data[2]);  // data[2] -> user_no
+                                            conn.query(sql, song1, function(err, rows){
+                                                if(err){
+                                                    logger.error("Profile_Edit_Waterfall_3 error");
+                                                    callback(err);
+                                                }else{
+                                                    if(rows.affectedRows == 1) callback(null);
+                                                    else{
+                                                        logger.error("Profile_Edit_affectedRows_2 error");
+                                                        conn.rollback(function(){
+                                                            done(false, "Profile_Edit DB error");  // error
+                                                            conn.release();
+                                                        });
+                                                    }
+                                                }
+                                            });
+                                        }else{
+                                            var sql = "INSERT INTO wave_song_first(user_no, first_thumb_url, first_title, first_video) VALUES(?,?,?,?)";
+                                            song1.unshift(data[2]);  // data[2] -> user_no
+                                            conn.query(sql, song1, function(err, rows){
+                                                if(err){
+                                                    logger.error("Profile_Edit_Waterfall_4 error");
+                                                    callback(err);
+                                                }else{
+                                                    if(rows.affectedRows == 1) callback(null);
+                                                    else{
+                                                        logger.error("Profile_Edit_affectedRows_3 error");
+                                                        conn.rollback(function(){
+                                                            done(false, "Profile_Edit DB error");  // error
+                                                            conn.release();
+                                                        });
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function(callback){  //  Second Song
+                                var sql = "SELECT COUNT(*) cnt FROM wave_song_second WHERE user_no = ?";
+                                conn.query(sql, data[2], function(err, rows){   // song2 데이터 유무 검사
+                                    if(err){
+                                        logger.error("Profile_Edit_Waterfall_5 error");
+                                        callback(err);
+                                    }else{
+                                        if(rows[0].cnt == 1){
+                                            if(song2 instanceof Array){
+                                                var sql = "UPDATE wave_song_second SET second_thumb_url=?, second_title=?, second_video=? WHERE user_no = ?";
+                                                song2.push(data[2]);  // data[2] -> user_no
+                                                conn.query(sql, song2, function(err, rows){
+                                                    if(err){
+                                                        logger.error("Profile_Edit_Waterfall_6 error");
+                                                        callback(err);
+                                                    }else{
+                                                        if(rows.affectedRows == 1) callback(null);
+                                                        else{
+                                                            logger.error("Profile_Edit_affectedRows_4 error");
+                                                            conn.rollback(function(){
+                                                                done(false, "Profile_Edit DB error");  // error
+                                                                conn.release();
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }else{
+                                                var sql = "DELETE FROM wave_song_second WHERE user_no=?";
+                                                conn.query(sql, data[2], function(err, rows){  // data[2] -> user_no
+                                                    if(err){
+                                                        logger.error("Profile_Edit_Waterfall_7 error");
+                                                        callback(err);
+                                                    }else{
+                                                        if(rows.affectedRows == 1) callback(null);
+                                                        else{
+                                                            logger.error("Profile_Edit_affectedRows_5 error");
+                                                            conn.rollback(function(){
+                                                                done(false, "Profile_Edit DB error");  // error
+                                                                conn.release();
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }else{
+                                            if(song2 instanceof Array) {
+                                                var sql = "INSERT INTO wave_song_second(user_no, second_thumb_url, second_title, second_video) VALUES(?,?,?,?)";
+                                                song2.unshift(data[2]);  // data[2] -> user_no
+                                                conn.query(sql, song2, function (err, rows) {
+                                                    if (err) {
+                                                        logger.error("Profile_Edit_Waterfall_8 error");
+                                                        callback(err);
+                                                    } else {
+                                                        if (rows.affectedRows == 1) callback(null);
+                                                        else {
+                                                            logger.error("Profile_Edit_affectedRows_6 error");
+                                                            conn.rollback(function () {
+                                                                done(false, "Profile_Edit DB error");  // error
+                                                                conn.release();
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }else callback(null);
+                                        }
+                                    }
+                                });
+                            },
+                            function(callback){  //  Third Song
+                                var sql = "SELECT COUNT(*) cnt FROM wave_song_third WHERE user_no = ?";
+                                conn.query(sql, data[2], function(err, rows){   // song3 데이터 유무 검사
+                                    if(err){
+                                        logger.error("Profile_Edit_Waterfall_9 error");
+                                        callback(err);
+                                    }else{
+                                        if(rows[0].cnt == 1){
+                                            if(song3 instanceof Array){
+                                                var sql = "UPDATE wave_song_third SET third_thumb_url=?, third_title=?, third_video=? WHERE user_no = ?";
+                                                song3.push(data[2]);  // data[2] -> user_no
+                                                conn.query(sql, song3, function(err, rows){
+                                                    if(err){
+                                                        logger.error("Profile_Edit_Waterfall_10 error");
+                                                        callback(err);
+                                                    }else{
+                                                        if(rows.affectedRows == 1) callback(null);
+                                                        else{
+                                                            logger.error("Profile_Edit_affectedRows_7 error");
+                                                            conn.rollback(function(){
+                                                                done(false, "Profile_Edit DB error");  // error
+                                                                conn.release();
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }else{
+                                                var sql = "DELETE FROM wave_song_third WHERE user_no=?";
+                                                conn.query(sql, data[2], function(err, rows){  // data[2] -> user_no
+                                                    if(err){
+                                                        logger.error("Profile_Edit_Waterfall_11 error");
+                                                        callback(err);
+                                                    }else{
+                                                        if(rows.affectedRows == 1) callback(null);
+                                                        else{
+                                                            logger.error("Profile_Edit_affectedRows_8 error");
+                                                            conn.rollback(function(){
+                                                                done(false, "Profile_Edit DB error");  // error
+                                                                conn.release();
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }else{
+                                            if(song3 instanceof Array) {
+                                                var sql = "INSERT INTO wave_song_third(user_no, third_thumb_url, third_title, third_video) VALUES(?,?,?,?)";
+                                                song3.unshift(data[2]);  // data[2] -> user_no
+                                                conn.query(sql, song3, function (err, rows) {
+                                                    if (err) {
+                                                        logger.error("Profile_Edit_Waterfall_12 error");
+                                                        callback(err);
+                                                    } else {
+                                                        if (rows.affectedRows == 1) callback(null);
+                                                        else {
+                                                            logger.error("Profile_Edit_affectedRows_9 error");
+                                                            conn.rollback(function () {
+                                                                done(false, "Profile_Edit DB error");  // error
+                                                                conn.release();
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }else callback(null);
+                                        }
+                                    }
+                                });
+                            }
+                        ],
+                        function(err){
+                            if(err){
+                                conn.rollback(function(){
+                                    done(false, "Profile_Edit DB error");  // error
+                                    conn.release();
+                                });
+                            }else{
+                                conn.commit(function(err){
+                                    if(err){
+                                        logger.error("Profile_Edit Commit error");
+                                        done(false, "Profile_Edit DB error");
+                                        conn.release();
+                                    }else{
+                                        done(true, "success");  // success
+                                        conn.release();
+                                    }
+                                });
+                            }
+                        }
+                    );  // waterfall
+                }
+            });  // beginTransaction
         }
     });
 };
