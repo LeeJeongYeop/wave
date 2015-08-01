@@ -11,12 +11,21 @@ var playModel = require('../models/playModel');
  *************/
 router.get('/surfers', function(req, res){
     if(req.session.user){  // loginRequired
-        playModel.surfers(req.session.user.user_no, function(status, msg, rows){
+        playModel.surfers(req.session.user.user_no, function(status, msg, user, song1, song2, song3){
             if(status){
                 return res.json({
                     "status" : status,
                     "message" : msg,
-                    "data" : rows
+                    "data" : {
+                        "user_no" : user.user_no,
+                        "email" : user.user_nickname,
+                        "comment" : user.user_comment,
+                        "img" : user.user_img,
+                        "point" : user.user_point,
+                        "song1" : song1,
+                        "song2" : song2,
+                        "song3" : song3
+                    }
                 });
             }else{
                 return res.json({
