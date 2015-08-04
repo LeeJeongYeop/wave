@@ -11,7 +11,7 @@ var pool = mysql.createPool(db_config);
 
 
 /*************
- * Profile View
+ * Surfers Random
  *************/
 exports.surfers = function(data, done){
     async.waterfall([
@@ -22,12 +22,12 @@ exports.surfers = function(data, done){
                 "WHERE user_no NOT IN(?) ORDER BY RAND() LIMIT 1 ";
                 pool.query(sql, data, function (err, rows) {
                     if (err) {
-                        logger.error("Profile View DB error");
+                        logger.error("Surfers DB error");
                         callback(err);
                     } else {
                         logger.info('rows[0]', rows[0]);
                         if (rows[0]) callback(null, rows[0]);
-                        else done(false, "Profile View DB error");  // error 없이 콜백
+                        else done(false, "Surfers DB error");  // error 없이 콜백
                     }
                 });
             },
@@ -35,12 +35,12 @@ exports.surfers = function(data, done){
                 var sql = "SELECT first_thumb_url, first_title, first_video FROM wave_song_first WHERE user_no=?";
                 pool.query(sql, user_info.user_no, function(err, rows){
                     if (err) {
-                        logger.error("Profile View DB error");
+                        logger.error("Surfers DB error");
                         callback(err);
                     } else {
-                        logger.info('rows[0]', rows[0]);
+                        logger.info('first_rows[0]', rows[0]);
                         if (rows[0]) callback(null, user_info, rows[0]);
-                        else done(false, "Profile View DB error");  // error 없이 콜백
+                        else done(false, "Surfers DB error");  // error 없이 콜백
                     }
                 });
             },
@@ -48,10 +48,10 @@ exports.surfers = function(data, done){
                 var sql = "SELECT second_thumb_url, second_title, second_video FROM wave_song_second WHERE user_no=?";
                 pool.query(sql, user_info.user_no, function(err, rows){
                     if (err) {
-                        logger.error("Profile View DB error");
+                        logger.error("Surfers DB error");
                         callback(err);
                     } else {
-                        logger.info('rows[0]', rows[0]);
+                        logger.info('second_rows[0]', rows[0]);
                         if (rows[0]) callback(null, user_info, song1, rows[0]);
                         else callback(null, user_info, song1, "NOT");
                     }
@@ -61,10 +61,10 @@ exports.surfers = function(data, done){
                 var sql = "SELECT third_thumb_url, third_title, third_video FROM wave_song_third WHERE user_no=?";
                 pool.query(sql, user_info.user_no, function (err, rows) {
                     if (err) {
-                        logger.error("Profile View DB error");
+                        logger.error("Surfers DB error");
                         callback(err);
                     } else {
-                        logger.info('rows[0]', rows[0]);
+                        logger.info('third_rows[0]', rows[0]);
                         if (rows[0]) callback(null, user_info, song1, song2, rows[0]);
                         else callback(null, user_info, song1, song2, "NOT");
                     }
@@ -72,7 +72,7 @@ exports.surfers = function(data, done){
             }
         ],
         function(err, user, song1, song2, song3){
-            if (err) done(false, "Profile View DB error");
+            if (err) done(false, "Surfers DB error");
             else{
                 logger.info("result:", user, song1, song2, song3);
                 done(true, "success", user, song1, song2, song3);
