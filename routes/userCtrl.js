@@ -119,7 +119,7 @@ router.get("/logout", function(req, res){
             }else{
                 res.json({
                     "status" : true,
-                    "message" : "Logout Success"
+                    "message" : "success"
                 });
             }
         });
