@@ -104,6 +104,34 @@ router.post("/fb", function(req, res){
 });
 
 /*************
+ * Logout
+ *************/
+router.post("/logout", function(req, res){
+    logger.info('req.session.user', req.session.user);
+
+    if(req.session.user){
+        req.session.destroy(function(err){
+            if(err){
+                res.json({
+                    "status" : false,
+                    "message" : "Logout Fail"
+                });
+            }else{
+                res.json({
+                    "status" : true,
+                    "message" : "Logout Success"
+                });
+            }
+        });
+    }else{
+        res.json({
+            "status" : false,
+            "message" : "Logout Fail"
+        });
+    }
+});
+
+/*************
  * Profile View
  *************/
 router.get('/profile', function(req, res){
