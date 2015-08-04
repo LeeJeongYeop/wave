@@ -25,3 +25,4 @@
 | Friend Delete |	POST	| /wave/friend/delete | complete | 15-07-27  |
 | Surfers |	GET	| /wave/play/surfers | complete | 15-07-28  |
 | Facebook |	POST	| /wave/user/fb | complete | 15-07-29  |
+| Logout |	GET	| /wave/user/logout | complete | 15-08-04  |

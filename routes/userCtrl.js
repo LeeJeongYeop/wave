@@ -106,7 +106,7 @@ router.post("/fb", function(req, res){
 /*************
  * Logout
  *************/
-router.post("/logout", function(req, res){
+router.get("/logout", function(req, res){
     logger.info('req.session.user', req.session.user);
 
     if(req.session.user){
