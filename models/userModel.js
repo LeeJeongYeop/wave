@@ -183,7 +183,7 @@ exports.profileView = function(data, done){
                     } else {
                         logger.info('rows[0]', rows[0]);
                         if (rows[0]) callback(null, rows[0]);
-                        else done(false, "Profile View DB error");  // error 없이 콜백
+                        else callback(null, "NOT");  // error 없이 콜백
                     }
                 });
             },
