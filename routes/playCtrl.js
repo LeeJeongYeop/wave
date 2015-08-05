@@ -18,7 +18,7 @@ router.get('/surfers', function(req, res){
                     "message" : msg,
                     "data" : {
                         "user_no" : user.user_no,
-                        "email" : user.user_nickname,
+                        "nickname" : user.user_nickname,
                         "comment" : user.user_comment,
                         "img" : user.user_img,
                         "point" : user.user_point,

@@ -38,7 +38,7 @@ exports.join = function(data, done) {
                         if(rows.affectedRows == 1){
                             callback(null);
                         }else{
-                            logger.error("Join_affectedRows error");
+                            logger.error("Join_affectedRows_1 error");
                             done(false, "Join_DB error");  // error
                         }
                     }

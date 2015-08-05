@@ -52,10 +52,21 @@ router.post('/join', function(req, res){
         });
     }else{
         userModel.join(data, function(status, msg){
-            return res.json({
-                "status" : status,
-                "message" : msg
-            });
+            if(status){
+                userModel.login([data.user_email, data.user_password, data.user_joinpath], function(login_status, login_msg, rows){
+                    if(login_status) req.session.user = rows;
+                    logger.info("session:", req.session.user);
+                    return res.json({
+                        "status" : login_status,
+                        "message" : login_msg
+                    });
+                });
+            }else{
+                return res.json({
+                    "status" : status,
+                    "message" : msg
+                });
+            }
         });
     }
 });
@@ -73,7 +84,7 @@ router.post('/login', function(req, res){
     }else{
         var data = [req.body.email, _crypto.do_ciper(req.body.password), '0'];  // [2] = user_joinpath
         userModel.login(data, function(status, msg, rows){
-            if(status) req.session.user = rows;  // session 저장
+            if(status) req.session.user = rows;
             return res.json({
                 "status" : status,
                 "message" : msg
