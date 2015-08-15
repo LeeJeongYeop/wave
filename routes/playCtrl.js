@@ -11,7 +11,7 @@ var playModel = require('../models/playModel');
  *************/
 router.get('/surfers', function(req, res){
     if(req.session.user){  // loginRequired
-        playModel.surfers(req.session.user.user_no, function(status, msg, user, song1, song2, song3){
+        playModel.surfers(req.session.user, function(status, msg, user, song1, song2, song3){
             if(status){
                 return res.json({
                     "status" : status,

@@ -54,7 +54,7 @@ router.post('/join', function(req, res){
         userModel.join(data, function(status, msg){
             if(status){
                 userModel.login([data.user_email, data.user_password, data.user_joinpath], function(login_status, login_msg, rows){
-                    if(login_status) req.session.user = rows;
+                    if(login_status) req.session.user = rows.user_no;
                     logger.info("session:", req.session.user);
                     return res.json({
                         "status" : login_status,
@@ -83,12 +83,35 @@ router.post('/login', function(req, res){
         });
     }else{
         var data = [req.body.email, _crypto.do_ciper(req.body.password), '0'];  // [2] = user_joinpath
-        userModel.login(data, function(status, msg, rows){
-            if(status) req.session.user = rows;
-            return res.json({
-                "status" : status,
-                "message" : msg
-            });
+        userModel.login(data, function(status, msg, rows, sub_rows) {
+            if (status) {
+                req.session.user = rows.user_no;
+                if(rows.user_status == 0){
+                    return res.json({
+                        "status": status,
+                        "message": msg,
+                        "data": {
+                            "case": rows.user_status
+                        }
+                    });
+                }else{
+                    return res.json({
+                        "status": status,
+                        "message": msg,
+                        "data": {
+                            "case": rows.user_status,
+                            "user_no": sub_rows.user_no,
+                            "nickname": sub_rows.user_nickname,
+                            "comment": sub_rows.user_comment
+                        }
+                    });
+                }
+            } else {
+                return res.json({
+                    "status": status,
+                    "message": msg
+                })
+            }
         });
     }
 });
@@ -99,12 +122,36 @@ router.post('/login', function(req, res){
 router.post("/fb", function(req, res){
     logger.info('req.body', req.body);
     if(req.body.access_token){
-        userModel.fb(req.body.access_token, function(status, msg, rows){
-            if(status) req.session.user = rows;  // session 저장
-            return res.json({
-                "status" : status,
-                "message" : msg
-            })
+        userModel.fb(req.body.access_token, function(status, msg, rows, sub_rows){
+            if(status){
+                req.session.user = rows.user_no;  // session 저장
+                if(rows.user_status == 0){
+                    return res.json({
+                        "status": status,
+                        "message": msg,
+                        "data": {
+                            "case": rows.user_status
+                        }
+                    });
+                }else{
+                    return res.json({
+                        "status": status,
+                        "message": msg,
+                        "data": {
+                            "case": rows.user_status,
+                            "user_no": sub_rows.user_no,
+                            "nickname": sub_rows.user_nickname,
+                            "comment": sub_rows.user_comment
+                        }
+                    });
+                }
+            }
+            else{
+                return res.json({
+                    "status" : status,
+                    "message" : msg
+                });
+            }
         });
     }else{
         return res.json({
@@ -147,7 +194,7 @@ router.get("/logout", function(req, res){
  *************/
 router.get('/profile', function(req, res){
     if(req.session.user){  // loginRequired
-        userModel.profileView(req.session.user.user_no, function(status, msg, rows){
+        userModel.profileView(req.session.user, function(status, msg, rows){
             if(status){
                 return res.json({
                     "status" : status,
@@ -157,6 +204,8 @@ router.get('/profile', function(req, res){
                         "nickname" : rows.data.user_nickname,
                         "comment" : rows.data.user_comment,
                         "profile_img" : rows.data.user_img,
+                        "phone" : rows.data.user_phone,
+                        "regid" : rows.data.user_regid,
                         "point" : rows.data.user_point,
                         "song1" : rows.song1,
                         "song2" : rows.song2,
@@ -190,7 +239,7 @@ router.post('/profile', function(req, res){
                 "message" : "닉네임을 입력해주세요."
             });
         }else{
-            var data = [req.body.nickname, req.body.comment, req.session.user.user_no];
+            var data = [req.body.nickname, req.body.comment, req.body.phone, req.body.regid, req.session.user];
             var song1 = req.body.song1;
             var song2 = req.body.song2;
             var song3 = req.body.song3;

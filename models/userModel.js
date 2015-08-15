@@ -56,14 +56,29 @@ exports.join = function(data, done) {
  * Email Login
  *************/
 exports.login = function(data, done){
-    var sql = "SELECT user_no FROM wave_user WHERE user_email=? AND user_password=? AND user_joinpath=?";
+    var sql = "SELECT user_no, user_status, user_surfing_no FROM wave_user WHERE user_email=? AND user_password=? AND user_joinpath=?";
     pool.query(sql, data, function(err, rows){
         if(err){
-            logger.error("Login_DB error");
+            logger.error("Login_DB error_1");
             done(false, "Login_DB error");
         }else{
             logger.info('rows[0]:', rows[0]);
-            if(rows[0]) done(true, "success", rows[0]);  // success
+            if(rows[0]){
+                if(rows[0].user_status == 0){
+                    done(true, "success", rows[0]);  // success
+                }else{
+                    var sub_sql = "SELECT user_no, user_nickname, user_comment FROM wave_user WHERE user_no = ?";
+                    pool.query(sub_sql, rows[0].user_surfing_no, function(err, sub_rows){
+                        if(err){
+                            logger.error("Login_DB error_2");
+                            done(false, "Login_DB error");
+                        }else{
+                            if(sub_rows[0]) done(true, "success", rows[0], sub_rows[0]);  // sub_rows는 대상 유저의 정보
+                            else done(false, "대상 유저 정보 DB 에러");
+                        }
+                    });
+                }
+            }
             else done(false, "아이디와 비밀번호가 일치하지 않습니다.");
         }
     });
@@ -123,7 +138,7 @@ exports.fb = function(access_token, done){
                                 }
                             },
                             function(callback){  // 로그인
-                                var sql = "SELECT user_no FROM wave_user WHERE user_email=? AND user_joinpath=?";
+                                var sql = "SELECT user_no, user_status, user_surfing_no FROM wave_user WHERE user_email=? AND user_joinpath=?";
                                 conn.query(sql, data, function(err, rows){
                                     if(err){
                                         logger.error("Facebook_Waterfall_4");
@@ -131,7 +146,23 @@ exports.fb = function(access_token, done){
                                     }else{
                                         logger.info('rows[0]:', rows[0]);
                                         if(rows[0]){
-                                            callback(null, rows[0]);
+                                            if(rows[0].user_status == 0){
+                                                callback(null, rows[0]);  // success
+                                            }else{
+                                                var sub_sql = "SELECT user_no, user_nickname, user_comment FROM wave_user WHERE user_no = ?";
+                                                conn.query(sub_sql, rows[0].user_surfing_no, function(err, sub_rows){
+                                                    if(err){
+                                                        logger.error("Facebook_Waterfall_5");
+                                                        callback(err);
+                                                    }else{
+                                                        if(sub_rows[0]) callback(null, rows[0], sub_rows[0]);  // sub_rows는 대상 유저의 정보
+                                                        else{
+                                                            done(false, "대상 유저 정보 DB 에러");  // error 없이 콜백
+                                                            conn.release();
+                                                        }
+                                                    }
+                                                });
+                                            }
                                         }else{
                                             done(false, "로그인 실패 다시 시도해주세요.");  // error 없이 콜백
                                             conn.release();
@@ -140,13 +171,18 @@ exports.fb = function(access_token, done){
                                 });
                             }
                         ],
-                        function(err, result){  // result = rows[0]
+                        function(err, rows, sub_rows){  // rows: 기본정보, sub_rows: 대상 정보
                             if(err){
                                 done(false, "Facebook DB error");
                                 conn.release();
                             }else{
-                                done(true, "success", result);
-                                conn.release();
+                                if(sub_rows){
+                                    done(true, "success", rows, sub_rows);
+                                    conn.release();
+                                }else{
+                                    done(true, "success", rows);
+                                    conn.release();
+                                }
                             }
                         }
                     );  // waterfall
@@ -162,7 +198,7 @@ exports.fb = function(access_token, done){
 exports.profileView = function(data, done){
     async.parallel({
             data: function(callback){
-                var sql = "SELECT user_email, user_nickname, user_comment, user_img, user_point FROM wave_user WHERE user_no = ?";
+                var sql = "SELECT user_email, user_nickname, user_comment, user_img, user_point, user_phone, user_regid FROM wave_user WHERE user_no = ?";
                 pool.query(sql, data, function (err, rows) {
                     if (err) {
                         logger.error("Profile View DB error");
@@ -242,7 +278,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                 }else{
                     async.waterfall([
                             function(callback){
-                                var sql = "UPDATE wave_user SET user_nickname = ?, user_comment = ? WHERE user_no = ?";
+                                var sql = "UPDATE wave_user SET user_nickname = ?, user_comment = ?, user_phone = ?, user_regid = ? WHERE user_no = ?";
                                 conn.query(sql, data, function(err, rows){
                                     if(err){
                                         logger.error("Profile_Edit_Waterfall_1 error");
@@ -261,14 +297,14 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                             },
                             function(callback){   // First Song
                                 var sql = "SELECT COUNT(*) cnt FROM wave_song_first WHERE user_no = ?";
-                                conn.query(sql, data[2], function(err, rows){   // song1 데이터 유무 검사
+                                conn.query(sql, data[4], function(err, rows){   // song1 데이터 유무 검사
                                     if(err){
                                         logger.error("Profile_Edit_Waterfall_2 error");
                                         callback(err);
                                     }else{
                                         if(rows[0].cnt == 1){
                                             var sql = "UPDATE wave_song_first SET first_thumb_url=?, first_title=?, first_video=? WHERE user_no = ?";
-                                            song1.push(data[2]);  // data[2] -> user_no
+                                            song1.push(data[4]);  // data[4] -> user_no
                                             conn.query(sql, song1, function(err, rows){
                                                 if(err){
                                                     logger.error("Profile_Edit_Waterfall_3 error");
@@ -286,7 +322,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                                             });
                                         }else{
                                             var sql = "INSERT INTO wave_song_first(user_no, first_thumb_url, first_title, first_video) VALUES(?,?,?,?)";
-                                            song1.unshift(data[2]);  // data[2] -> user_no
+                                            song1.unshift(data[4]);  // data[4] -> user_no
                                             conn.query(sql, song1, function(err, rows){
                                                 if(err){
                                                     logger.error("Profile_Edit_Waterfall_4 error");
@@ -308,7 +344,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                             },
                             function(callback){  //  Second Song
                                 var sql = "SELECT COUNT(*) cnt FROM wave_song_second WHERE user_no = ?";
-                                conn.query(sql, data[2], function(err, rows){   // song2 데이터 유무 검사
+                                conn.query(sql, data[4], function(err, rows){   // song2 데이터 유무 검사
                                     if(err){
                                         logger.error("Profile_Edit_Waterfall_5 error");
                                         callback(err);
@@ -316,7 +352,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                                         if(rows[0].cnt == 1){
                                             if(song2 instanceof Array){
                                                 var sql = "UPDATE wave_song_second SET second_thumb_url=?, second_title=?, second_video=? WHERE user_no = ?";
-                                                song2.push(data[2]);  // data[2] -> user_no
+                                                song2.push(data[4]);  // data[4] -> user_no
                                                 conn.query(sql, song2, function(err, rows){
                                                     if(err){
                                                         logger.error("Profile_Edit_Waterfall_6 error");
@@ -334,7 +370,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                                                 });
                                             }else{
                                                 var sql = "DELETE FROM wave_song_second WHERE user_no=?";
-                                                conn.query(sql, data[2], function(err, rows){  // data[2] -> user_no
+                                                conn.query(sql, data[4], function(err, rows){  // data[4] -> user_no
                                                     if(err){
                                                         logger.error("Profile_Edit_Waterfall_7 error");
                                                         callback(err);
@@ -353,7 +389,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                                         }else{
                                             if(song2 instanceof Array) {
                                                 var sql = "INSERT INTO wave_song_second(user_no, second_thumb_url, second_title, second_video) VALUES(?,?,?,?)";
-                                                song2.unshift(data[2]);  // data[2] -> user_no
+                                                song2.unshift(data[4]);  // data[4] -> user_no
                                                 conn.query(sql, song2, function (err, rows) {
                                                     if (err) {
                                                         logger.error("Profile_Edit_Waterfall_8 error");
@@ -376,7 +412,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                             },
                             function(callback){  //  Third Song
                                 var sql = "SELECT COUNT(*) cnt FROM wave_song_third WHERE user_no = ?";
-                                conn.query(sql, data[2], function(err, rows){   // song3 데이터 유무 검사
+                                conn.query(sql, data[4], function(err, rows){   // song3 데이터 유무 검사
                                     if(err){
                                         logger.error("Profile_Edit_Waterfall_9 error");
                                         callback(err);
@@ -384,7 +420,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                                         if(rows[0].cnt == 1){
                                             if(song3 instanceof Array){
                                                 var sql = "UPDATE wave_song_third SET third_thumb_url=?, third_title=?, third_video=? WHERE user_no = ?";
-                                                song3.push(data[2]);  // data[2] -> user_no
+                                                song3.push(data[4]);  // data[4] -> user_no
                                                 conn.query(sql, song3, function(err, rows){
                                                     if(err){
                                                         logger.error("Profile_Edit_Waterfall_10 error");
@@ -402,7 +438,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                                                 });
                                             }else{
                                                 var sql = "DELETE FROM wave_song_third WHERE user_no=?";
-                                                conn.query(sql, data[2], function(err, rows){  // data[2] -> user_no
+                                                conn.query(sql, data[4], function(err, rows){  // data[4] -> user_no
                                                     if(err){
                                                         logger.error("Profile_Edit_Waterfall_11 error");
                                                         callback(err);
@@ -421,7 +457,7 @@ exports.profileEdit = function(data, song1, song2, song3, done){
                                         }else{
                                             if(song3 instanceof Array) {
                                                 var sql = "INSERT INTO wave_song_third(user_no, third_thumb_url, third_title, third_video) VALUES(?,?,?,?)";
-                                                song3.unshift(data[2]);  // data[2] -> user_no
+                                                song3.unshift(data[4]);  // data[4] -> user_no
                                                 conn.query(sql, song3, function (err, rows) {
                                                     if (err) {
                                                         logger.error("Profile_Edit_Waterfall_12 error");

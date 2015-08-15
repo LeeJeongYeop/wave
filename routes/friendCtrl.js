@@ -11,7 +11,7 @@ var friendModel = require('../models/friendModel');
  *************/
 router.get('/', function(req, res){
     if(req.session.user){  // loginRequired
-        friendModel.list(req.session.user.user_no, function(status, msg, rows){
+        friendModel.list(req.session.user, function(status, msg, rows){
             if(status){
                 return res.json({
                     "status" : status,
@@ -38,7 +38,7 @@ router.get('/', function(req, res){
  *************/
 router.post('/add', function(req, res){
     if(req.session.user){  // loginRequired
-        var data = [req.session.user.user_no, req.body.friend_no];
+        var data = [req.session.user, req.body.friend_no];
         friendModel.add(data, function(status, msg){
             return res.json({
                 "status" : status,
@@ -58,7 +58,7 @@ router.post('/add', function(req, res){
  *************/
 router.post('/delete', function(req, res){
     if(req.session.user){  // loginRequired
-        var data = [req.session.user.user_no, req.body.friend_no];
+        var data = [req.session.user, req.body.friend_no];
         friendModel.delete(data, function(status, msg){
             return res.json({
                 "status" : status,
