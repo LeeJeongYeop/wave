@@ -16,10 +16,17 @@ var pool = mysql.createPool(db_config);
 exports.surfers = function(data, done){
     async.waterfall([
             function(callback){
-                var sql =
-                    "SELECT user_no, user_nickname, user_comment, user_img, user_point "+
-                    "FROM wave_user "+
-                    "WHERE user_no NOT IN(?) AND user_status IN(0) ORDER BY RAND() LIMIT 1 ";
+                if(data.length == 0){
+                    var sql =
+                        "SELECT user_no, user_nickname, user_comment, user_img, user_point, user_status "+
+                        "FROM wave_user "+
+                        "ORDER BY RAND() LIMIT 1 ";
+                }else{
+                    var sql =
+                        "SELECT user_no, user_nickname, user_comment, user_img, user_point, user_status "+
+                        "FROM wave_user "+
+                        "WHERE user_no NOT IN(?) ORDER BY RAND() LIMIT 1 ";
+                }
                 pool.query(sql, data, function (err, rows) {
                     if (err) {
                         logger.error("Surfers DB error");
