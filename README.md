@@ -26,3 +26,5 @@
 | Surfers |	GET	| /wave/play/surfers | complete | 15-07-28  |
 | Facebook |	POST	| /wave/user/fb | complete | 15-07-29  |
 | Logout |	GET	| /wave/user/logout | complete | 15-08-04  |
+| Hash Join |	POST	| /wave/user/hJoin | complete | 15-08-22  |
+| Hash Login |	POST	| /wave/user/hLogin | complete | 15-08-22  |

@@ -12,6 +12,79 @@ var logger = require('../logger');
 var pool = mysql.createPool(db_config);
 
 /*************
+ * Hash Join
+ *************/
+exports.hJoin = function(data, done){
+    async.waterfall([
+            function(callback){   // 중복검사
+                var sql = "SELECT COUNT(*) cnt FROM wave_user WHERE user_hash_id=? AND user_joinpath=?";
+                pool.query(sql, [data.user_hash_id, data.user_joinpath], function(err, rows){
+                    if(err){
+                        logger.error("hJoin_Waterfall_1");
+                        callback(err);
+                    }else{
+                        if(rows[0].cnt == 1) done(false, "try again"); // done 콜백
+                        else callback(null);
+                    }
+                });
+            },
+            function(callback){  // 가입
+                var sql = "INSERT INTO wave_user SET ?";
+                pool.query(sql, data, function(err, rows){
+                    if(err){
+                        logger.error("hJoin_Waterfall_2");
+                        callback(err);
+                    }else{
+                        if(rows.affectedRows == 1){
+                            callback(null);
+                        }else{
+                            logger.error("hJoin_affectedRows_1 error");
+                            done(false, "hJoin_DB error");  // error
+                        }
+                    }
+                });
+            }
+        ],
+        function(err){
+            if(err) done(false, "hJoin_DB error");  // error
+            else done(true, "success");  // success
+        }
+    );  // waterfall
+};
+
+/*************
+ * Hash Login
+ *************/
+exports.hLogin = function(data, done){
+    var sql = "SELECT user_no, user_status, user_surfing_no FROM wave_user WHERE user_hash_id=? AND user_joinpath=?";
+    pool.query(sql, data, function(err, rows){
+        if(err){
+            logger.error("hLogin_DB error_1");
+            done(false, "hLogin_DB error");
+        }else{
+            logger.info('rows[0]:', rows[0]);
+            if(rows[0]){
+                if(rows[0].user_status == 0){
+                    done(true, "success", rows[0]);  // success
+                }else{
+                    var sub_sql = "SELECT user_no, user_nickname, user_comment FROM wave_user WHERE user_no = ?";
+                    pool.query(sub_sql, rows[0].user_surfing_no, function(err, sub_rows){
+                        if(err){
+                            logger.error("hLogin_DB error_2");
+                            done(false, "hLogin_DB error");
+                        }else{
+                            if(sub_rows[0]) done(true, "success", rows[0], sub_rows[0]);  // sub_rows는 대상 유저의 정보
+                            else done(false, "대상 유저 정보 DB 에러");
+                        }
+                    });
+                }
+            }
+            else done(false, "로그인 정보 오류");
+        }
+    });
+};
+
+/*************
  * Email Join
  *************/
 exports.join = function(data, done) {

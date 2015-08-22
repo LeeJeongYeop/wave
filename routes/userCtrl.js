@@ -32,6 +32,83 @@ router.get('/img/:IMG_NAME', function (req, res) {
 });
 
 /*************
+ * Hash Join
+ *************/
+router.post('/hJoin', function(req, res){
+    var n = parseInt((Math.random()*4)+1);  // 랜덤 이미지
+    var data = {
+        "user_hash_id" : _crypto.hash_id(),
+        "user_img" : my.IMG(n),
+        "user_joinpath" : 0
+    };
+    userModel.hJoin(data, function(status, msg){
+        if(status){
+            userModel.hLogin([data.user_hash_id, data.user_joinpath], function(login_status, login_msg, rows){  // 가입후 자동로그인
+                if(login_status) req.session.user = rows.user_no;
+                logger.info("session:", req.session.user);
+                return res.json({
+                    "status" : login_status,
+                    "message" : login_msg,
+                    "data" : {
+                        "hash_id" : data.user_hash_id
+                    }
+                });
+            });
+        }else{
+            return res.json({
+                "status" : status,
+                "message" : msg
+            });
+        }
+    });
+});
+
+/*************
+ * Hash Login
+ *************/
+router.post('/hLogin', function(req, res){
+    var check = [req.body.hash_id];
+    if(data_check(check) == 1){
+        return res.json({
+            "status" : false,
+            "message" : "다시 로그인 해 주세요."
+        });
+    }else{
+        var data = [req.body.hash_id, '0'];  // [1] = user_joinpath
+        userModel.hLogin(data, function(status, msg, rows, sub_rows) {
+            if (status) {
+                req.session.user = rows.user_no;
+                if(rows.user_status == 0){
+                    return res.json({
+                        "status": status,
+                        "message": msg,
+                        "data": {
+                            "case": rows.user_status
+                        }
+                    });
+                }else{
+                    return res.json({
+                        "status": status,
+                        "message": msg,
+                        "data": {
+                            "case": rows.user_status,
+                            "user_no": sub_rows.user_no,
+                            "nickname": sub_rows.user_nickname,
+                            "comment": sub_rows.user_comment
+                        }
+                    });
+                }
+            } else {
+                return res.json({
+                    "status": status,
+                    "message": msg
+                })
+            }
+        });
+    }
+});
+
+/*************
  * Email Join
  *************/
 router.post('/join', function(req, res){
