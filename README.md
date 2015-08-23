@@ -28,3 +28,5 @@
 | Logout |	GET	| /wave/user/logout | complete | 15-08-04  |
 | Hash Join |	POST	| /wave/user/hJoin | complete | 15-08-22  |
 | Hash Login |	POST	| /wave/user/hLogin | complete | 15-08-22  |
+| Surfing Request |	POST	| /wave/play/req | complete | 15-08-23  |
+| Surfing Response |	POST	| /wave/play/res | complete | 15-08-23  |

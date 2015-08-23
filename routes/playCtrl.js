@@ -79,7 +79,7 @@ router.post('/res', function(req, res){
     if(req.session.user){  // loginRequired
         if(req.body.res == 0){  // 수락
             playModel.res_ok(req.session.user, function(status,msg, res_user_nickname, req_user_regid, req_user_song){
-                if(status) {
+                if(status) {  //TODO 아이폰, 안드로이드인지 확인해야함
                     var message = res_user_nickname + "께서 서핑을 수락하였습니다.";
                     my.apns(req_user_regid, message);
                 }
@@ -90,7 +90,7 @@ router.post('/res', function(req, res){
             });
         }else{  // 서핑 거절
             playModel.res_no(req.session.user, function(status, msg, res_user_nickname, req_user_regid){
-                if(status) {
+                if(status) {  //TODO 아이폰, 안드로이드인지 확인해야함
                     var message = res_user_nickname + "께서 서핑을 거절하였습니다.";
                     my.apns(req_user_regid, message);
                 }
