@@ -5,6 +5,7 @@ var express = require('express');
 var router = express.Router();
 var logger = require('../logger');
 var playModel = require('../models/playModel');
+var my = require('./my_conf');
 
 /*************
  * Surfers Random
@@ -47,17 +48,14 @@ router.post('/req', function(req, res) {
         playModel.req(data, function(status, msg){
             if(status){
                 playModel.req_info(req.body.user_no, function(status, msg, rows){
-                    if(status){
-                        return res.json({  // 임시
-                            "row" : rows
-                        });
-                        // TODO push
-                    }else{
-                        return res.json({
-                            "status" : status,
-                            "message" : msg
-                        });
+                    if(status) {  //TODO 아이폰, 안드로이드인지 확인해야함
+                        var message = rows.user_nickname + "님께서 서핑을 신청했습니다.";
+                        my.apns(rows.user_regid, message);
                     }
+                    return res.json({
+                        "status" : status,
+                        "message" : msg
+                    });
                 });
             }else{
                 return res.json({
@@ -80,24 +78,26 @@ router.post('/req', function(req, res) {
 router.post('/res', function(req, res){
     if(req.session.user){  // loginRequired
         if(req.body.res == 0){  // 수락
-            var data = [req.body.user_no, req.session.user];
-            playModel.res_ok(data, function(status,msg){
-
+            playModel.res_ok(req.session.user, function(status,msg, res_user_nickname, req_user_regid, req_user_song){
+                if(status) {
+                    var message = res_user_nickname + "께서 서핑을 수락하였습니다.";
+                    my.apns(req_user_regid, message);
+                }
+                return res.json({
+                    "status" : status,
+                    "message" : msg
+                });
             });
         }else{  // 서핑 거절
-            var data = [req.body.user_no, req.session.user];
-            playModel.res_no(data, function(status, msg){
-                if(status){
-                    return res.json({  // 임시
-                        "status" : status
-                    });
-                    // TODO push
-                }else{
-                    return res.json({
-                        "status" : status,
-                        "message" : msg
-                    });
+            playModel.res_no(req.session.user, function(status, msg, res_user_nickname, req_user_regid){
+                if(status) {
+                    var message = res_user_nickname + "께서 서핑을 거절하였습니다.";
+                    my.apns(req_user_regid, message);
                 }
+                return res.json({
+                    "status" : status,
+                    "message" : msg
+                });
             });
         }
     }else{

@@ -29,7 +29,7 @@ exports.surfers = function(data, done){
                 }
                 pool.query(sql, data, function (err, rows) {
                     if (err) {
-                        logger.error("Surfers DB error");
+                        logger.error("Surfers DB error_1");
                         callback(err);
                     } else {
                         logger.info('rows[0]', rows[0]);
@@ -42,7 +42,7 @@ exports.surfers = function(data, done){
                 var sql = "SELECT first_thumb_url, first_title, first_video FROM wave_song_first WHERE user_no=?";
                 pool.query(sql, user_info.user_no, function(err, rows){
                     if (err) {
-                        logger.error("Surfers DB error");
+                        logger.error("Surfers DB error_2");
                         callback(err);
                     } else {
                         logger.info('first_rows[0]', rows[0]);
@@ -55,7 +55,7 @@ exports.surfers = function(data, done){
                 var sql = "SELECT second_thumb_url, second_title, second_video FROM wave_song_second WHERE user_no=?";
                 pool.query(sql, user_info.user_no, function(err, rows){
                     if (err) {
-                        logger.error("Surfers DB error");
+                        logger.error("Surfers DB error_3");
                         callback(err);
                     } else {
                         logger.info('second_rows[0]', rows[0]);
@@ -68,7 +68,7 @@ exports.surfers = function(data, done){
                 var sql = "SELECT third_thumb_url, third_title, third_video FROM wave_song_third WHERE user_no=?";
                 pool.query(sql, user_info.user_no, function (err, rows) {
                     if (err) {
-                        logger.error("Surfers DB error");
+                        logger.error("Surfers DB error_4");
                         callback(err);
                     } else {
                         logger.info('third_rows[0]', rows[0]);
@@ -79,7 +79,7 @@ exports.surfers = function(data, done){
             }
         ],
         function(err, user, song1, song2, song3){
-            if (err) done(false, "Surfers DB error");
+            if (err) done(false, "Surfers DB error_5");
             else{
                 logger.info("result:", user, song1, song2, song3);
                 done(true, "success", user, song1, song2, song3);
@@ -109,14 +109,16 @@ exports.req = function(data, done){
                                 var sql = "UPDATE wave_user SET user_status = 1, user_surfing_no = ? WHERE user_no = ?";  // user_status=1 -> 신청한 사람의 표시
                                 conn.query(sql, data, function(err, rows){
                                     if(err){
-                                        logger.info("Request DB waterfall_1");
+                                        logger.error("Request DB waterfall_1");
                                         callback(err);
                                     }else{
                                         if(rows.affectedRows == 1) callback(null);
                                         else{
-                                            logger.info("Request DB waterfall_2");
-                                            done(false, "Request DB error");  // error 없이 콜백
-                                            conn.release();
+                                            logger.error("Request DB waterfall_2");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Request DB error");
+                                                conn.release();
+                                            });
                                         }
                                     }
                                 });
@@ -125,14 +127,16 @@ exports.req = function(data, done){
                                 var sql = "UPDATE wave_user SET user_status = 2, user_surfing_no = ? WHERE user_no = ?";  // user_status=2 -> 신청 받은 사람의 표시
                                 conn.query(sql, [data[1], data[0]], function(err, rows){  // SWAP
                                     if(err){
-                                        logger.info("Request DB waterfall_3");
+                                        logger.error("Request DB waterfall_3");
                                         callback(err);
                                     }else{
                                         if(rows.affectedRows == 1) callback(null);
                                         else{
-                                            logger.info("Request DB waterfall_4");
-                                            done(false, "Request DB error");  // error 없이 콜백
-                                            conn.release();
+                                            logger.error("Request DB waterfall_4");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Request DB error");
+                                                conn.release();
+                                            });
                                         }
                                     }
                                 });
@@ -165,7 +169,7 @@ exports.req = function(data, done){
 };
 
 exports.req_info = function(data, done){
-    var sql = "SELECT user_phone, user_regid FROM wave_user WHERE user_no = ?";
+    var sql = "SELECT user_nickname, user_phone, user_regid FROM wave_user WHERE user_no = ?";
     pool.query(sql, data, function(err, rows){
         if(err) done(false, "Req_info DB error");
         else done(true, "success", rows[0]);
@@ -176,7 +180,6 @@ exports.req_info = function(data, done){
  * Surfing Response
  *************/
 exports.res_ok = function(data, done){  // 수락
-    // TODO surfing 테이블에 들어가야함
     pool.getConnection(function(err, conn) {
         if(err) {
             logger.error("Surfing_Response_ok_getConnection error");
@@ -191,39 +194,99 @@ exports.res_ok = function(data, done){  // 수락
                 } else {
                     async.waterfall([
                             function (callback) {
-                                var sql = "UPDATE wave_user SET user_status = 3 WHERE user_no = ?";  // user_status=3 -> 거절로 둘다 case 0
-                                conn.query(sql, data[0], function(err, rows){
+                                var sql = "SELECT user_surfing_no, user_nickname FROM wave_user WHERE user_no = ?";  // 신청한 사람의 정보를 얻기위해 user_surfing_no 를 구함
+                                conn.query(sql, data, function(err, rows){
                                     if(err){
-                                        logger.info("Response_ok DB waterfall_1");
+                                        logger.error("Response_ok DB waterfall_1");
                                         callback(err);
                                     }else{
-                                        if(rows.affectedRows == 1) callback(null);
+                                        if(rows[0]) callback(null, rows[0]);
                                         else{
-                                            logger.info("Response_ok DB waterfall_2");
-                                            done(false, "Response_ok DB error");  // error 없이 콜백
-                                            conn.release();
+                                            logger.error("Response_ok DB waterfall_2");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Response_ok DB error");
+                                                conn.release();
+                                            });
                                         }
                                     }
                                 });
                             },
-                            function (callback) {
-                                var sql = "UPDATE wave_user SET user_status = 0, user_surfing_no = 0 WHERE user_no = ?";  // user_status=2, user_surfing_no=0 -> 거절로 둘다 case 0
-                                conn.query(sql, data[1], function(err, rows){  // SWAP
+                            function (user_row, callback) {
+                                var sql = "UPDATE wave_user SET user_status = 3 WHERE user_no = ? OR user_no = ?";  // user_status=2, user_surfing_no=0 -> 거절로 둘다 case 0
+                                conn.query(sql, [data, user_row.user_surfing_no], function(err, rows){
                                     if(err){
-                                        logger.info("Response_ok DB waterfall_3");
+                                        logger.error("Response_ok DB waterfall_3");
                                         callback(err);
                                     }else{
-                                        if(rows.affectedRows == 1) callback(null);
+                                        if(rows.affectedRows == 2) callback(null, user_row);
                                         else{
-                                            logger.info("Response_ok DB waterfall_4");
-                                            done(false, "Response_ok DB error");  // error 없이 콜백
-                                            conn.release();
+                                            logger.error("Response_ok DB waterfall_4");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Response_ok DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function (user_row, callback) {
+                                var sql = "SELECT user_regid FROM wave_user WHERE user_no = ?";  // 신청한 사람의 regid
+                                logger.info(user_row.user_surfing_no);
+                                conn.query(sql, user_row.user_surfing_no, function(err, rows){
+                                    if(err){
+                                        logger.error("Response_ok DB waterfall_5");
+                                        callback(err);
+                                    }else{
+                                        if(rows[0]) callback(null, user_row, rows[0]); // rows[0] = 신청한 사람의 regid
+                                        else{
+                                            logger.error("Response_ok DB waterfall_6");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Response_no DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function(user_row, req_user_regid, callback){
+                                var sql = "SELECT first_thumb_url, first_title, first_video FROM wave_song_first WHERE user_no = ?";
+                                conn.query(sql, user_row.user_surfing_no, function(err, rows){
+                                    if(err){
+                                        logger.error("Response_ok DB waterfall_7");
+                                        callback(err);
+                                    }else{
+                                        if(rows[0]) callback(null, user_row, req_user_regid, rows[0]);
+                                        else {
+                                            logger.error("Response_ok DB waterfall_8");
+                                            conn.rollback(function () {  // error 없이 rollback
+                                                done(false, "Response_ok DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function(user_row, req_user_regid, req_user_song, callback){
+                                var sql = "INSERT INTO wave_surfing(surfing_req_user_no, surfing_res_user_no, surfing_snd_user_no, surfing_thumb_url, surfing_title, surfing_video) VALUES (?,?,?,?,?,?)";
+                                conn.query(sql, [user_row.user_surfing_no, data, user_row.user_surfing_no, req_user_song.first_thumb_url, req_user_song.first_title, req_user_song.first_video], function(err, rows){
+                                    // [] = 1.신청한사람 2.수락한사람 3.추천한사람(신청한사람) 4~6.곡정보
+                                    if(err){
+                                        logger.error("Response_ok DB waterfall_9");
+                                        callback(err);
+                                    }else{
+                                        if(rows.affectedRows == 1) callback(null, user_row.user_nickname, req_user_regid, req_user_song);
+                                        else{
+                                            logger.error("Response_ok DB waterfall_10");
+                                            conn.rollback(function () {  // error 없이 rollback
+                                                done(false, "Response_ok DB error");
+                                                conn.release();
+                                            });
                                         }
                                     }
                                 });
                             }
                         ],
-                        function (err) {
+                        function (err, res_user_nickname, req_user_regid, req_user_song) {
                             if (err) {
                                 conn.rollback(function () {
                                     done(false, "Response_ok DB error");  // error
@@ -236,7 +299,7 @@ exports.res_ok = function(data, done){  // 수락
                                         done(false, "Response_ok DB error");
                                         conn.release();
                                     } else {
-                                        done(true, "success");  // success
+                                        done(true, "success", res_user_nickname, req_user_regid, req_user_song);  // success
                                         conn.release();
                                     }
                                 });
@@ -264,39 +327,61 @@ exports.res_no = function(data, done){  // 거절
                 } else {
                     async.waterfall([
                             function (callback) {
-                                var sql = "UPDATE wave_user SET user_status = 0, user_surfing_no = 0 WHERE user_no = ?";  // user_status=0, user_surfing_no=0 -> 거절로 둘다 case 0
-                                conn.query(sql, data[0], function(err, rows){
+                                var sql = "SELECT user_surfing_no, user_nickname FROM wave_user WHERE user_no = ?";  // 신청한 사람의 정보를 얻기위해 user_surfing_no 를 구함
+                                conn.query(sql, data, function(err, rows){
                                     if(err){
-                                        logger.info("Response_no DB waterfall_1");
+                                        logger.error("Response_no DB waterfall_1");
                                         callback(err);
                                     }else{
-                                        if(rows.affectedRows == 1) callback(null);
+                                        if(rows[0]) callback(null, rows[0]);  // rows[0] => 신청한 사람
                                         else{
-                                            logger.info("Response_no DB waterfall_2");
-                                            done(false, "Response_no DB error");  // error 없이 콜백
-                                            conn.release();
+                                            logger.error("Response_no DB waterfall_2");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Response_no DB error");
+                                                conn.release();
+                                            });
                                         }
                                     }
                                 });
                             },
-                            function (callback) {
-                                var sql = "UPDATE wave_user SET user_status = 0, user_surfing_no = 0 WHERE user_no = ?";  // user_status=2, user_surfing_no=0 -> 거절로 둘다 case 0
-                                conn.query(sql, data[1], function(err, rows){  // SWAP
+                            function (user_row, callback){  // user_row.user_surfing_no = 신청한 사람
+                                var sql = "UPDATE wave_user SET user_status = 0, user_surfing_no = 0 WHERE user_no = ? OR user_no = ?";  // user_status=0, user_surfing_no=0 -> 거절로 둘다 case 0
+                                conn.query(sql, [data, user_row.user_surfing_no], function(err, rows){
                                     if(err){
-                                        logger.info("Response_no DB waterfall_3");
+                                        logger.error("Response_no DB waterfall_3");
                                         callback(err);
                                     }else{
-                                        if(rows.affectedRows == 1) callback(null);
+                                        if(rows.affectedRows == 2) callback(null, user_row);
                                         else{
-                                            logger.info("Response_no DB waterfall_4");
-                                            done(false, "Response_no DB error");  // error 없이 콜백
-                                            conn.release();
+                                            logger.error("Response_no DB waterfall_4");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Response_no DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function (user_row, callback) {
+                                var sql = "SELECT user_regid FROM wave_user WHERE user_no = ?";  // 신청한 사람의 regid
+                                conn.query(sql, user_row.user_surfing_no, function(err, rows){
+                                    if(err){
+                                        logger.error("Response_no DB waterfall_5");
+                                        callback(err);
+                                    }else{
+                                        if(rows[0]) callback(null, user_row.user_nickname, rows[0]); // rows[0] = 신청한 사람의 regid
+                                        else{
+                                            logger.error("Response_no DB waterfall_6");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Response_no DB error");
+                                                conn.release();
+                                            });
                                         }
                                     }
                                 });
                             }
                         ],
-                        function (err) {
+                        function (err, res_user_nickname, req_user_regid) {
                             if (err) {
                                 conn.rollback(function () {
                                     done(false, "Response_no DB error");  // error
@@ -309,7 +394,7 @@ exports.res_no = function(data, done){  // 거절
                                         done(false, "Response_no DB error");
                                         conn.release();
                                     } else {
-                                        done(true, "success");  // success
+                                        done(true, "success", res_user_nickname, req_user_regid);  // success
                                         conn.release();
                                     }
                                 });
@@ -321,7 +406,6 @@ exports.res_no = function(data, done){  // 거절
         }
     });
 };
-
 /*************
  * Surfers Random
  *************/

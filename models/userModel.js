@@ -274,7 +274,7 @@ exports.profileView = function(data, done){
                 var sql = "SELECT user_email, user_nickname, user_comment, user_img, user_point, user_phone, user_regid FROM wave_user WHERE user_no = ?";
                 pool.query(sql, data, function (err, rows) {
                     if (err) {
-                        logger.error("Profile View DB error");
+                        logger.error("Profile View DB error_0");
                         callback(err);
                     } else {
                         logger.info('rows[0]', rows[0]);
@@ -287,7 +287,7 @@ exports.profileView = function(data, done){
                 var sql = "SELECT first_thumb_url, first_title, first_video FROM wave_song_first WHERE user_no=?";
                 pool.query(sql, data, function(err, rows){
                     if (err) {
-                        logger.error("Profile View DB error");
+                        logger.error("Profile View DB error_1");
                         callback(err);
                     } else {
                         logger.info('rows[0]', rows[0]);
@@ -300,7 +300,7 @@ exports.profileView = function(data, done){
                 var sql = "SELECT second_thumb_url, second_title, second_video FROM wave_song_second WHERE user_no=?";
                 pool.query(sql, data, function(err, rows){
                     if (err) {
-                        logger.error("Profile View DB error");
+                        logger.error("Profile View DB error_2");
                         callback(err);
                     } else {
                         logger.info('rows[0]', rows[0]);
@@ -313,7 +313,7 @@ exports.profileView = function(data, done){
                 var sql = "SELECT third_thumb_url, third_title, third_video FROM wave_song_third WHERE user_no=?";
                 pool.query(sql, data, function(err, rows){
                     if (err) {
-                        logger.error("Profile View DB error");
+                        logger.error("Profile View DB error_3");
                         callback(err);
                     } else {
                         logger.info('rows[0]', rows[0]);
