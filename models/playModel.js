@@ -406,6 +406,57 @@ exports.res_no = function(data, done){  // 거절
         }
     });
 };
+
+/*************
+ * Surfing Read
+ *************/
+exports.read = function(data, done){
+    async.waterfall([
+            function(callback){
+                var sql =
+                    "SELECT surfing_snd_user_no, surfing_thumb_url, surfing_title, surfing_video, UNIX_TIMESTAMP(surfing_last) surfing_last "+
+                    "FROM wave_surfing "+
+                    "WHERE surfing_res_user_no = ? OR surfing_req_user_no = ?";
+                pool.query(sql, [data, data], function(err, rows){
+                    if(err){
+                        logger.error("Surfing Read Waterfall_1");
+                        callback(err);
+                    }else{
+                        if(rows[0]) callback(null, rows[0]);
+                        else{
+                            logger.error("Surfing Read Waterfall_2");
+                            done(false, "Surfing_Read_DB error");  // error 없이 done 콜백
+                        }
+                    }
+                });
+            },
+            function(song, callback){
+                if(song.surfing_snd_user_no == data){
+                    callback(null, song);
+                }else{
+                    var sql = "UPDATE wave_surfing SET surfing_thumb_url = NULL, surfing_title = NULL, surfing_video = NULL WHERE surfing_res_user_no = ? OR surfing_req_user_no = ?";
+                    pool.query(sql, [data, data], function(err, rows){
+                        if(err){
+                            logger.error("Surfing Read Waterfall_3");
+                            callback(err);
+                        }else{
+                            if(rows.affectedRows == 1) callback(null, song);
+                            else{
+                                logger.error("Surfing Read Waterfall_4");
+                                done(false, "Surfing_Read_DB error");  // error 없이 done 콜백
+                            }
+                        }
+                    });
+                }
+            }
+        ],
+        function(err, song){
+            if(err) done(false, "Surfing_Read_DB error");  // error
+            else done(true, "success", song);  // success
+        }
+    );  // waterfall
+};
+
 /*************
  * Surfers Random
  *************/

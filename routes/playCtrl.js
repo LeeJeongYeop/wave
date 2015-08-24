@@ -108,4 +108,37 @@ router.post('/res', function(req, res){
     }
 });
 
+/*************
+ * Surfing Read
+ *************/
+router.get('/read', function(req, res){
+    if(req.session.user){
+        playModel.read(req.session.user, function(status, msg, song){
+            if(status){
+                return res.json({
+                    "status" : status,
+                    "messgae" : msg,
+                    "data" : {
+                        "snd_user_no" : song.surfing_snd_user_no,
+                        "thumb_url" : song.surfing_thumb_url,
+                        "title" : song.surfing_title,
+                        "video" : song.surfing_video,
+                        "time" : song.surfing_last
+                    }
+                });
+            }else{
+                return res.json({
+                    "status" : status,
+                    "message" : msg
+                })
+            }
+        });
+    }else{
+        return res.json({
+            "status" : false,
+            "message" : "not log-in"
+        });
+    }
+});
+
 module.exports = router;
