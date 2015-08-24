@@ -30,3 +30,4 @@
 | Hash Login |	POST	| /wave/user/hLogin | complete | 15-08-22  |
 | Surfing Request |	POST	| /wave/play/req | complete | 15-08-23  |
 | Surfing Response |	POST	| /wave/play/res | complete | 15-08-23  |
+| Surfing Read |	GET	| /wave/play/read | complete | 15-08-24  |
