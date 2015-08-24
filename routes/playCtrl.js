@@ -123,6 +123,7 @@ router.get('/read', function(req, res){
                         "thumb_url" : song.surfing_thumb_url,
                         "title" : song.surfing_title,
                         "video" : song.surfing_video,
+                        "comment" : song.surfing_comment,
                         "time" : song.surfing_last
                     }
                 });
@@ -132,6 +133,30 @@ router.get('/read', function(req, res){
                     "message" : msg
                 })
             }
+        });
+    }else{
+        return res.json({
+            "status" : false,
+            "message" : "not log-in"
+        });
+    }
+});
+
+/*************
+ * Surfing Send
+ *************/
+router.post('/send', function(req, res){
+    if(req.session.user){
+        var data = [req.body.thumb_url, req.body.title, req.body.video, req.body.comment, req.session.user];
+        playModel.send(data, function(status, msg, snd_nickname, rec_regid){
+            if(status){
+                var message = snd_nickname+"님께서 음악을 추천하였습니다.";
+                my.apns(rec_regid, message);
+            }
+            return res.json({
+                "status" : status,
+                "message" : msg
+            });
         });
     }else{
         return res.json({

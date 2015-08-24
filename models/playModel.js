@@ -249,7 +249,10 @@ exports.res_ok = function(data, done){  // 수락
                                 });
                             },
                             function(user_row, req_user_regid, callback){
-                                var sql = "SELECT first_thumb_url, first_title, first_video FROM wave_song_first WHERE user_no = ?";
+                                var sql =
+                                    "SELECT f.first_thumb_url, f.first_title, f.first_video, u.user_comment "+
+                                    "FROM wave_song_first f, wave_user u "+
+                                    "WHERE f.user_no = u.user_no AND u.user_no = ?";
                                 conn.query(sql, user_row.user_surfing_no, function(err, rows){
                                     if(err){
                                         logger.error("Response_ok DB waterfall_7");
@@ -267,8 +270,8 @@ exports.res_ok = function(data, done){  // 수락
                                 });
                             },
                             function(user_row, req_user_regid, req_user_song, callback){
-                                var sql = "INSERT INTO wave_surfing(surfing_req_user_no, surfing_res_user_no, surfing_snd_user_no, surfing_thumb_url, surfing_title, surfing_video) VALUES (?,?,?,?,?,?)";
-                                conn.query(sql, [user_row.user_surfing_no, data, user_row.user_surfing_no, req_user_song.first_thumb_url, req_user_song.first_title, req_user_song.first_video], function(err, rows){
+                                var sql = "INSERT INTO wave_surfing(surfing_req_user_no, surfing_res_user_no, surfing_snd_user_no, surfing_thumb_url, surfing_title, surfing_video, surfing_comment) VALUES (?,?,?,?,?,?,?)";
+                                conn.query(sql, [user_row.user_surfing_no, data, user_row.user_surfing_no, req_user_song.first_thumb_url, req_user_song.first_title, req_user_song.first_video, req_user_song.comment], function(err, rows){
                                     // [] = 1.신청한사람 2.수락한사람 3.추천한사람(신청한사람) 4~6.곡정보
                                     if(err){
                                         logger.error("Response_ok DB waterfall_9");
@@ -414,7 +417,7 @@ exports.read = function(data, done){
     async.waterfall([
             function(callback){
                 var sql =
-                    "SELECT surfing_snd_user_no, surfing_thumb_url, surfing_title, surfing_video, UNIX_TIMESTAMP(surfing_last) surfing_last "+
+                    "SELECT surfing_snd_user_no, surfing_thumb_url, surfing_title, surfing_video, surfing_comment, UNIX_TIMESTAMP(surfing_last) surfing_last "+
                     "FROM wave_surfing "+
                     "WHERE surfing_res_user_no = ? OR surfing_req_user_no = ?";
                 pool.query(sql, [data, data], function(err, rows){
@@ -434,7 +437,10 @@ exports.read = function(data, done){
                 if(song.surfing_snd_user_no == data){
                     callback(null, song);
                 }else{
-                    var sql = "UPDATE wave_surfing SET surfing_thumb_url = NULL, surfing_title = NULL, surfing_video = NULL WHERE surfing_res_user_no = ? OR surfing_req_user_no = ?";
+                    var sql =
+                        "UPDATE wave_surfing "+
+                        "SET surfing_thumb_url = NULL, surfing_title = NULL, surfing_video = NULL, surfing_comment = NULL "+
+                        "WHERE surfing_res_user_no = ? OR surfing_req_user_no = ?";
                     pool.query(sql, [data, data], function(err, rows){
                         if(err){
                             logger.error("Surfing Read Waterfall_3");
@@ -453,6 +459,71 @@ exports.read = function(data, done){
         function(err, song){
             if(err) done(false, "Surfing_Read_DB error");  // error
             else done(true, "success", song);  // success
+        }
+    );  // waterfall
+};
+
+/*************
+ * Surfing Send
+ *************/
+exports.send = function(data, done){
+    async.waterfall([
+            function(callback){
+                var sql =
+                    "SELECT user_regid FROM wave_user WHERE user_no "+
+                    "IN (SELECT user_surfing_no FROM wave_user WHERE user_no = ?)";  // 수신하는 사람의 regid
+                pool.query(sql, data[4], function(err, rows){  // data[4] -> 보낸 사람의 user_no
+                    if(err){
+                        logger.error("Surfing Send Waterfall_1");
+                        callback(err);
+                    }else{
+                        if(rows[0]) callback(null, rows[0]);
+                        else {
+                            logger.error("Surfing Send Waterfall_2");
+                            done(false, "Surfing_Send_DB error");  // error 없이 done 콜백
+                        }
+                    }
+                });
+            },
+            function(rec_regid, callback){
+                var sql = "SELECT user_nickname FROM wave_user WHERE user_no = ?";
+                pool.query(sql, data[4], function(err, rows){
+                    if(err){
+                        logger.error("Surfing Send Waterfall_3");
+                        callback(err);
+                    }else{
+                        if(rows[0]) callback(null, rows[0], rec_regid);
+                        else {
+                            logger.error("Surfing Send Waterfall_4");
+                            done(false, "Surfing_Send_DB error");  // error 없이 done 콜백
+                        }
+                    }
+                });
+            },
+            function(snd_nickname, rec_regid, callback){  // 송신자의 user_nickname, 수신자의 user_regid
+                var sql =
+                    "UPDATE wave_surfing "+
+                    "SET surfing_thumb_url = ?, surfing_title = ?, surfing_video = ?, surfing_comment = ?, surfing_snd_user_no = ? "+
+                    "WHERE surfing_res_user_no = ? OR surfing_req_user_no = ?";
+                data.push(data[4]);  // surfing_snd_user_no를 업데이트 하기위해
+                data.push(data[4]);  // res와 req 모두 검사하기위해
+                pool.query(sql, data, function(err, rows){
+                    if(err){
+                        logger.error("Surfing Send Waterfall_5");
+                        callback(err);
+                    }else{
+                        if(rows.affectedRows == 1) callback(null, snd_nickname, rec_regid);
+                        else {
+                            logger.error("Surfing Send Waterfall_6");
+                            done(false, "Surfing_Send_DB error");  // error 없이 done 콜백
+                        }
+                    }
+                });
+            }
+        ],
+        function(err, snd_nickname, rec_regid){
+            if(err) done(false, "Surfing_Read_DB error");  // error
+            else done(true, "success", snd_nickname, rec_regid);  // success
         }
     );  // waterfall
 };
