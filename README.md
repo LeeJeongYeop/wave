@@ -32,3 +32,4 @@
 | Surfing Response |	POST	| /wave/play/res | complete | 15-08-23  |
 | Surfing Read |	GET	| /wave/play/read | complete | 15-08-24  |
 | Surfing Send |	POST	| /wave/play/send | complete | 15-08-25  |
+| Surfing Out |	POST	| /wave/play/out | complete | 15-08-30  |

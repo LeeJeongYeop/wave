@@ -35,10 +35,11 @@ router.get('/img/:IMG_NAME', function (req, res) {
  * Hash Join
  *************/
 router.post('/hJoin', function(req, res){
-    var n = parseInt((Math.random()*4)+1);  // 랜덤 이미지
+    var n = parseInt((Math.random()*3));  // 랜덤 이미지
+    var img = ["a", "b", "c"];
     var data = {
         "user_hash_id" : _crypto.hash_id(),
-        "user_img" : my.IMG(n),
+        "user_img" : img[n],
         "user_joinpath" : 0
     };
     userModel.hJoin(data, function(status, msg){
@@ -113,13 +114,14 @@ router.post('/hLogin', function(req, res){
  *************/
 router.post('/join', function(req, res){
     logger.info('POST DATA: ', req.body);
-    var n = parseInt((Math.random()*4)+1);  // 랜덤 이미지
+    var n = parseInt((Math.random()*3));  // 랜덤 이미지
+    img = ["a", "b", "c"];
     var check = [req.body.email, req.body.password, req.body.nickname];
     var data = {
         "user_email" : req.body.email,
         "user_password" : _crypto.do_ciper(req.body.password),
         "user_nickname" : req.body.nickname,
-        "user_img" : my.IMG(n),
+        "user_img" : img[n],
         "user_joinpath" : 0
     };
     if(data_check(check) == 1){

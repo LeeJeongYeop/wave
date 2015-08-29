@@ -192,8 +192,9 @@ exports.fb = function(access_token, done){
                                 logger.info('cnt : ', cnt);
                                 if(cnt == 1) callback(null);
                                 else{
-                                    var n = parseInt((Math.random()*4)+1);  // 랜덤 이미지
-                                    var insert_data = [data[0], data[1], my.IMG(n)];  // data[0]-> email, data[1]-> joinpath
+                                    var n = parseInt((Math.random()*3));  // 랜덤 이미지
+                                    var img = ["a", "b", "c"];
+                                    var insert_data = [data[0], data[1], img[n]];  // data[0]-> email, data[1]-> joinpath
                                     var sql = "INSERT INTO wave_user(user_email, user_joinpath, user_img) VALUES(?,?,?)";
                                     conn.query(sql, insert_data, function(err, rows){
                                         if(err){

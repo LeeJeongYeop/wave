@@ -45,17 +45,13 @@ router.get('/surfers', function(req, res){
 router.post('/req', function(req, res) {
     if(req.session.user){  // loginRequired
         var data = [req.body.user_no, req.session.user];  // data[0] == 1은 요청상태인 case 1을 의미
-        playModel.req(data, function(status, msg){
-            if(status){
-                playModel.req_info(req.body.user_no, function(status, msg, rows){
-                    if(status) {  //TODO 아이폰, 안드로이드인지 확인해야함
-                        var message = rows.user_nickname + "님께서 서핑을 신청했습니다.";
-                        my.apns(rows.user_regid, message);
-                    }
-                    return res.json({
-                        "status" : status,
-                        "message" : msg
-                    });
+        playModel.req(data, function(status, msg, res_user, req_user_nickname){
+            if(status){  //TODO 아이폰, 안드로이드인지 확인해야함
+                var message = req_user_nickname + "님께서 서핑을 신청했습니다.";
+                my.apns(res_user.user_regid, message);
+                return res.json({
+                    "status" : status,
+                    "message" : msg
                 });
             }else{
                 return res.json({
@@ -113,13 +109,14 @@ router.post('/res', function(req, res){
  *************/
 router.get('/read', function(req, res){
     if(req.session.user){
-        playModel.read(req.session.user, function(status, msg, song){
+        playModel.read(req.session.user, function(status, msg, nickname, song){
             if(status){
                 return res.json({
                     "status" : status,
                     "messgae" : msg,
                     "data" : {
                         "snd_user_no" : song.surfing_snd_user_no,
+                        "nickname" : nickname.user_nickname,
                         "thumb_url" : song.surfing_thumb_url,
                         "title" : song.surfing_title,
                         "video" : song.surfing_video,
@@ -152,6 +149,29 @@ router.post('/send', function(req, res){
             if(status){
                 var message = snd_nickname+"님께서 음악을 추천하였습니다.";
                 my.apns(rec_regid, message);
+            }
+            return res.json({
+                "status" : status,
+                "message" : msg
+            });
+        });
+    }else{
+        return res.json({
+            "status" : false,
+            "message" : "not log-in"
+        });
+    }
+});
+
+/*************
+ * Surfing Out
+ *************/
+router.post('/out', function(req, res){
+    if(req.session.user){
+        playModel.out(req.session.user, function(status, msg, user_row, nickname){
+            if(status){
+                var message = nickname+"님께서 서핑룸을 나가셨습니다.";
+                my.apns(user_row.user_regid, message);
             }
             return res.json({
                 "status" : status,

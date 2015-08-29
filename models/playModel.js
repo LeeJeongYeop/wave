@@ -140,9 +140,45 @@ exports.req = function(data, done){
                                         }
                                     }
                                 });
+                            },
+                            function(callback){
+                                var sql = "SELECT user_phone, user_regid FROM wave_user WHERE user_no = ?";
+                                conn.query(sql, data[0], function(err, rows){
+                                    if(err){
+                                        logger.error("Request DB waterfall_5");
+                                        callback(err);
+                                    }else {
+                                        if(rows[0]) callback(null, rows[0]);
+                                        else{
+                                            logger.error("Request DB waterfall_6");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Request DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function(res_user, callback){
+                                var sql = "SELECT user_nickname FROM wave_user WHERE user_no = ?";
+                                conn.query(sql, data[1], function(err, rows){
+                                    if(err){
+                                        logger.error("Request DB waterfall_7");
+                                        callback(err);
+                                    }else {
+                                        if(rows[0]) callback(null, res_user, rows[0].user_nickname);
+                                        else{
+                                            logger.error("Request DB waterfall_8");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Request DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
                             }
                         ],
-                        function (err) {
+                        function (err, res_user, req_user_nickname) {
                             if (err) {
                                 conn.rollback(function () {
                                     done(false, "Request DB error");  // error
@@ -155,7 +191,7 @@ exports.req = function(data, done){
                                         done(false, "Request DB error");
                                         conn.release();
                                     } else {
-                                        done(true, "success");  // success
+                                        done(true, "success", res_user, req_user_nickname);  // success
                                         conn.release();
                                     }
                                 });
@@ -165,14 +201,6 @@ exports.req = function(data, done){
                 }
             });  // beginTransaction
         }
-    });
-};
-
-exports.req_info = function(data, done){
-    var sql = "SELECT user_nickname, user_phone, user_regid FROM wave_user WHERE user_no = ?";
-    pool.query(sql, data, function(err, rows){
-        if(err) done(false, "Req_info DB error");
-        else done(true, "success", rows[0]);
     });
 };
 
@@ -237,7 +265,7 @@ exports.res_ok = function(data, done){  // 수락
                                         logger.error("Response_ok DB waterfall_5");
                                         callback(err);
                                     }else{
-                                        if(rows[0]) callback(null, user_row, rows[0]); // rows[0] = 신청한 사람의 regid
+                                        if(rows[0]) callback(null, user_row, rows[0].user_regid); // rows[0] = 신청한 사람의 regid
                                         else{
                                             logger.error("Response_ok DB waterfall_6");
                                             conn.rollback(function(){  // error 없이 rollback
@@ -372,7 +400,7 @@ exports.res_no = function(data, done){  // 거절
                                         logger.error("Response_no DB waterfall_5");
                                         callback(err);
                                     }else{
-                                        if(rows[0]) callback(null, user_row.user_nickname, rows[0]); // rows[0] = 신청한 사람의 regid
+                                        if(rows[0]) callback(null, user_row.user_nickname, rows[0].user_regid); // rows[0] = 신청한 사람의 regid
                                         else{
                                             logger.error("Response_no DB waterfall_6");
                                             conn.rollback(function(){  // error 없이 rollback
@@ -434,6 +462,24 @@ exports.read = function(data, done){
                 });
             },
             function(song, callback){
+                var sql =
+                    "SELECT user_nickname "+
+                    "FROM wave_user "+
+                    "WHERE user_no = ?";
+                pool.query(sql, song.surfing_snd_user_no, function(err, rows){
+                    if(err){
+                        logger.error("Surfing Read Waterfall_3");
+                        callback(err);
+                    }else{
+                        if(rows[0]) callback(null, rows[0], song);
+                        else{
+                            logger.error("Surfing Read Waterfall_4");
+                            done(false, "Surfing_Read_DB error");  // error 없이 done 콜백
+                        }
+                    }
+                });
+            },
+            function(nickname, song, callback){
                 if(song.surfing_snd_user_no == data){
                     callback(null, song);
                 }else{
@@ -443,12 +489,12 @@ exports.read = function(data, done){
                         "WHERE surfing_res_user_no = ? OR surfing_req_user_no = ?";
                     pool.query(sql, [data, data], function(err, rows){
                         if(err){
-                            logger.error("Surfing Read Waterfall_3");
+                            logger.error("Surfing Read Waterfall_5");
                             callback(err);
                         }else{
-                            if(rows.affectedRows == 1) callback(null, song);
+                            if(rows.affectedRows == 1) callback(null, nickname, song);
                             else{
-                                logger.error("Surfing Read Waterfall_4");
+                                logger.error("Surfing Read Waterfall_6");
                                 done(false, "Surfing_Read_DB error");  // error 없이 done 콜백
                             }
                         }
@@ -456,9 +502,9 @@ exports.read = function(data, done){
                 }
             }
         ],
-        function(err, song){
+        function(err, nickname, song){
             if(err) done(false, "Surfing_Read_DB error");  // error
-            else done(true, "success", song);  // success
+            else done(true, "success", nickname, song);  // success
         }
     );  // waterfall
 };
@@ -477,7 +523,7 @@ exports.send = function(data, done){
                         logger.error("Surfing Send Waterfall_1");
                         callback(err);
                     }else{
-                        if(rows[0]) callback(null, rows[0]);
+                        if(rows[0]) callback(null, rows[0].user_regid);
                         else {
                             logger.error("Surfing Send Waterfall_2");
                             done(false, "Surfing_Send_DB error");  // error 없이 done 콜백
@@ -526,6 +572,124 @@ exports.send = function(data, done){
             else done(true, "success", snd_nickname, rec_regid);  // success
         }
     );  // waterfall
+};
+
+/*************
+ * Surfing Out
+ *************/
+exports.out = function(data, done){
+    pool.getConnection(function(err, conn) {
+        if(err) {
+            logger.error("Surfing_Out_getConnection error");
+            done(false, "Surfing_Out DB error");
+            conn.release();
+        }else {
+            conn.beginTransaction(function (err) {
+                if (err) {
+                    logger.error("Surfing_Out_beginTransaction error");
+                    done(false, "Surfing_Out DB error");
+                    conn.release();
+                } else {
+                    async.waterfall([
+                            function (callback) {
+                                var sql =
+                                    "SELECT user_no, user_regid FROM wave_user WHERE user_no "+
+                                    "IN (SELECT user_surfing_no FROM wave_user WHERE user_no = ?)";
+                                conn.query(sql, data, function(err, rows){
+                                    if(err){
+                                        logger.error("Surfing_Out DB waterfall_1");
+                                        callback(err);
+                                    }else{
+                                        if(rows[0]) callback(null, rows[0]);  // rows[0] => 나가는 사람의 상대방 정보
+                                        else{
+                                            logger.error("Surfing_Out DB waterfall_2");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Surfing_Out DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function (user_row, callback){  // user_row = 나가는 사람의 상대방 정보
+                                var sql = "UPDATE wave_user SET user_status = 0, user_surfing_no = 0 WHERE user_no = ? OR user_no = ?";
+                                conn.query(sql, [data, user_row.user_no], function(err, rows){
+                                    if(err){
+                                        logger.error("Surfing_Out DB waterfall_3");
+                                        callback(err);
+                                    }else{
+                                        if(rows.affectedRows == 2) callback(null, user_row);
+                                        else{
+                                            logger.error("Surfing_Out DB waterfall_4");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Surfing_Out DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function (user_row, callback) {
+                                var sql = "DELETE FROM wave_surfing WHERE surfing_res_user_no = ? OR surfing_req_user_no = ?";
+                                conn.query(sql, [data, data], function(err, rows){  // [data, data] 신청한 사람과 신청받은 사람 둘다 검새해야 함
+                                    if(err){
+                                        logger.error("Surfing_Out waterfall_5");
+                                        callback(err);
+                                    }else{
+                                        if(rows.affectedRows == 1) callback(null, user_row);
+                                        else{
+                                            logger.error("Surfing_Out DB waterfall_6");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Surfing_Out DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            },
+                            function(user_row, callback){
+                                var sql = "SELECT user_nickname FROM wave_user WHERE user_no = ?";
+                                conn.query(sql, data, function(err, rows){
+                                    if(err){
+                                        logger.error("Surfing_Out DB waterfall_7");
+                                        callback(err);
+                                    }else{
+                                        if(rows[0]) callback(null, user_row, rows[0].user_nickname);  // rows[0] => 나가는 사람의 닉네임
+                                        else{
+                                            logger.error("Surfing_Out DB waterfall_8");
+                                            conn.rollback(function(){  // error 없이 rollback
+                                                done(false, "Surfing_Out DB error");
+                                                conn.release();
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                        ],
+                        function (err, user_row, nickname) {
+                            if (err) {
+                                conn.rollback(function () {
+                                    done(false, "Surfing_Out DB error");  // error
+                                    conn.release();
+                                });
+                            } else {
+                                conn.commit(function (err) {
+                                    if (err) {
+                                        logger.error("Surfing_Out DB Commit error");
+                                        done(false, "Surfing_Out DB error");
+                                        conn.release();
+                                    } else {
+                                        done(true, "success", user_row, nickname);  // success
+                                        conn.release();
+                                    }
+                                });
+                            }
+                        }
+                    );  // waterfall
+                }
+            });  // beginTransaction
+        }
+    });
 };
 
 /*************
