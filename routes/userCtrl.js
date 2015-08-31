@@ -337,4 +337,36 @@ router.post('/profile', function(req, res){
     }
 });
 
+/*************
+ * Refresh
+ *************/
+router.get('/refresh', function(req, res){
+    if(req.session.user){  // loginRequired
+        userModel.refresh(req.session.user, function(status, msg, rows, sub_rows){
+            if(status){
+                return res.json({
+                    "status": status,
+                    "message": msg,
+                    "data": {
+                        "case": rows.user_status,
+                        "user_no": sub_rows.user_no,
+                        "nickname": sub_rows.user_nickname,
+                        "comment": sub_rows.user_comment
+                    }
+                });
+            }else{
+                return res.json({
+                    "status" : status,
+                    "message" : msg
+                });
+            }
+        });
+    }else{
+        return res.json({
+            "status" : false,
+            "message" : "not log-in"
+        });
+    }
+});
+
 module.exports = router;

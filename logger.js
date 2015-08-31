@@ -8,7 +8,7 @@ var moment = require('moment');
 var logger = new winston.Logger({
     transports : [
         new  winston.transports.Console({
-            level: 'info',
+            level: 'error',
             colorize: true
         })
         // new winston.transports.DailyRotateFile({

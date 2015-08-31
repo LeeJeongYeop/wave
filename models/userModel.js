@@ -578,3 +578,35 @@ exports.profileEdit = function(data, song1, song2, song3, done){
         }
     });
 };
+
+/*************
+ * Refresh
+ *************/
+exports.refresh = function(data, done){
+    var sql = "SELECT user_status, user_surfing_no FROM wave_user WHERE user_no = ?";
+    pool.query(sql, data, function(err, rows){
+        if(err){
+            logger.error("Refresh_DB error_1");
+            done(false, "Refresh_DB error");
+        }else{
+            logger.info('rows[0]:', rows[0]);
+            if(rows[0]){
+                if(rows[0].user_status == 0){
+                    done(false, "You're not Surfing User");  // 서핑중이 아닌 사람의 경우
+                }else{
+                    var sub_sql = "SELECT user_no, user_nickname, user_comment FROM wave_user WHERE user_no = ?";
+                    pool.query(sub_sql, rows[0].user_surfing_no, function(err, sub_rows){
+                        if(err){
+                            logger.error("Refresh_DB error_2");
+                            done(false, "Refresh_DB error");
+                        }else{
+                            if(sub_rows[0]) done(true, "success", rows[0], sub_rows[0]);  // sub_rows는 대상 유저의 정보
+                            else done(false, "대상 유저 정보 DB 에러");
+                        }
+                    });
+                }
+            }
+            else done(false, "You're not Surfing User");
+        }
+    });
+};
