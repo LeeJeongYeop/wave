@@ -32,7 +32,7 @@ exports.surfers = function(data, done){
                         logger.error("Surfers DB error_1");
                         callback(err);
                     } else {
-                        logger.info('rows[0]', rows[0]);
+                        //logger.info('rows[0]', rows[0]);
                         if (rows[0]) callback(null, rows[0]);
                         else done(false, "Surfers DB error");  // error 없이 콜백
                     }
@@ -45,7 +45,7 @@ exports.surfers = function(data, done){
                         logger.error("Surfers DB error_2");
                         callback(err);
                     } else {
-                        logger.info('first_rows[0]', rows[0]);
+                        //logger.info('first_rows[0]', rows[0]);
                         if (rows[0]) callback(null, user_info, rows[0]);
                         else done(false, "Surfers DB error");  // error 없이 콜백
                     }
@@ -58,7 +58,7 @@ exports.surfers = function(data, done){
                         logger.error("Surfers DB error_3");
                         callback(err);
                     } else {
-                        logger.info('second_rows[0]', rows[0]);
+                        //logger.info('second_rows[0]', rows[0]);
                         if (rows[0]) callback(null, user_info, song1, rows[0]);
                         else callback(null, user_info, song1, "NOT");
                     }
@@ -71,7 +71,7 @@ exports.surfers = function(data, done){
                         logger.error("Surfers DB error_4");
                         callback(err);
                     } else {
-                        logger.info('third_rows[0]', rows[0]);
+                        //logger.info('third_rows[0]', rows[0]);
                         if (rows[0]) callback(null, user_info, song1, song2, rows[0]);
                         else callback(null, user_info, song1, song2, "NOT");
                     }
@@ -81,7 +81,7 @@ exports.surfers = function(data, done){
         function(err, user, song1, song2, song3){
             if (err) done(false, "Surfers DB error_5");
             else{
-                logger.info("result:", user, song1, song2, song3);
+                //logger.info("result:", user, song1, song2, song3);
                 done(true, "success", user, song1, song2, song3);
             }
         }
@@ -481,7 +481,7 @@ exports.read = function(data, done){
             },
             function(nickname, song, callback){
                 if(song.surfing_snd_user_no == data){
-                    callback(null, song);
+                    callback(null, nickname, song);
                 }else{
                     var sql =
                         "UPDATE wave_surfing "+
@@ -538,7 +538,7 @@ exports.send = function(data, done){
                         logger.error("Surfing Send Waterfall_3");
                         callback(err);
                     }else{
-                        if(rows[0]) callback(null, rows[0], rec_regid);
+                        if(rows[0]) callback(null, rows[0].user_nickname, rec_regid);
                         else {
                             logger.error("Surfing Send Waterfall_4");
                             done(false, "Surfing_Send_DB error");  // error 없이 done 콜백

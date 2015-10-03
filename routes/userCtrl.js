@@ -311,7 +311,7 @@ router.get('/profile', function(req, res){
  *************/
 router.post('/profile', function(req, res){
     if(req.session.user){  // loginRequired
-        logger.info("req.body : ", req.body);
+        logger.info("Profile Edit req.body : ", req.body);
         if(data_check([req.body.nickname]) == 1){
             return res.json({
                 "status" : false,

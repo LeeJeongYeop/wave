@@ -338,6 +338,10 @@ exports.profileView = function(data, done){
  * Profile Edit
  *************/
 exports.profileEdit = function(data, song1, song2, song3, done){
+    logger.info("Profile Edit req.body Model data : ", data);
+    logger.info("Profile Edit req.body Model song1: ", song1);
+    logger.info("Profile Edit req.body Model song2 : ", song2);
+    logger.info("Profile Edit req.body Model song3 : ", song3);
     pool.getConnection(function(err, conn){
         if(err){
             logger.error("Profile_Edit_getConnection error");
